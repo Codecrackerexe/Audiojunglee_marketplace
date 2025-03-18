@@ -23,7 +23,7 @@ const theme = createTheme({
       main: '#2196f3',
     },
     secondary: {
-      main:'#f50057', 
+      main: '#f50057',
     },
   },
 });
@@ -31,14 +31,14 @@ const theme = createTheme({
 function App() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector(state => state.auth);
-  
+
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchUserProfile());
-    }      
+    }
     dispatch(fetchCategories());
   }, [dispatch, isAuthenticated]);
-  
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -49,7 +49,7 @@ function App() {
             <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
             <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
             <Route path="/products/:id" element={<ProductDetail />} />
-            <Route path="/cart" element={<Cart/>} />
+            <Route path="/cart" element={<Cart />} />
             <Route path="/profile" element={
               <PrivateRoute>
                 <Profile />

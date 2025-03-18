@@ -1,12 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchUserProfile } from '../Store/Slices/authSlice';
+import { fetchCategories } from '../Store/Slices/categorySlice';
 import {
   Container, Typography, Box, Paper, Grid, TextField, Button,
   Avatar, Tab, Tabs, List, ListItem, ListItemText, Chip,
-  CircularProgress, Alert
+  CircularProgress, Alert, MenuItem
 } from '@mui/material';
 import { uploadAudioFile, createProduct } from '../Store/Slices/productSlice';
+
+// TabPanel component for the tabs
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`profile-tabpanel-${index}`}
+      aria-labelledby={`profile-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ pt: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
 
 const Profile = () => {
   const [value, setValue] = useState(0);
@@ -28,22 +50,24 @@ const Profile = () => {
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
-  
+
   const dispatch = useDispatch();
-  
+
   const { user, loading: userLoading } = useSelector(state => state.auth);
-  const { categories } = useSelector(state => state.categories);
-  const { 
-    audioFile, 
-    uploadLoading, 
-    uploadError, 
-    loading: productLoading 
+  // Use a default empty array if categories is undefined
+  const { categories = [] } = useSelector(state => state.categories);
+  const {
+    audioFile,
+    uploadLoading,
+    uploadError,
+    loading: productLoading
   } = useSelector(state => state.products);
 
   useEffect(() => {
     dispatch(fetchUserProfile());
+    dispatch(fetchCategories());
   }, [dispatch]);
-  
+
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -53,44 +77,44 @@ const Profile = () => {
       });
     }
   }, [user]);
-  
+
   const handleTabChange = (event, newValue) => {
     setValue(newValue);
   };
-  
+
   const handleProfileChange = (e) => {
     setProfileData({
       ...profileData,
       [e.target.name]: e.target.value
     });
   };
-  
+
   const handlePasswordChange = (e) => {
     setNewPassword({
       ...newPassword,
       [e.target.name]: e.target.value
     });
   };
-  
+
   const handleProductChange = (e) => {
     setProductForm({
       ...productForm,
       [e.target.name]: e.target.value
     });
   };
-  
+
   const handleFileChange = (e) => {
-    if (e.target.files.length > 0) {
+    if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
     }
   };
-  
+
   const handleUploadFile = () => {
     if (selectedFile) {
       dispatch(uploadAudioFile(selectedFile));
     }
   };
-  
+
   const handleUpdateProfile = (e) => {
     e.preventDefault();
     setTimeout(() => {
@@ -98,7 +122,7 @@ const Profile = () => {
       setTimeout(() => setUpdateSuccess(false), 3000);
     }, 1000);
   };
-  
+
   const handleUpdatePassword = (e) => {
     e.preventDefault();
     setTimeout(() => {
@@ -107,14 +131,14 @@ const Profile = () => {
       setTimeout(() => setUpdateSuccess(false), 3000);
     }, 1000);
   };
-  
+
   const handleCreateProduct = (e) => {
     e.preventDefault();
-    
+
     if (!audioFile) {
       return;
     }
-    
+
     const productData = {
       title: productForm.title,
       description: productForm.description,
@@ -122,9 +146,9 @@ const Profile = () => {
       category: productForm.category ? parseInt(productForm.category) : null,
       audio_file: audioFile.id
     };
-    
+
     dispatch(createProduct(productData));
-    
+
     // Reset form after submission
     setProductForm({
       title: '',
@@ -134,7 +158,7 @@ const Profile = () => {
     });
     setSelectedFile(null);
   };
-  
+
   if (userLoading) {
     return (
       <Container sx={{ py: 4, textAlign: 'center' }}>
@@ -142,7 +166,7 @@ const Profile = () => {
       </Container>
     );
   }
-  
+
   return (
     <Container sx={{ py: 4 }}>
       <Grid container spacing={4}>
@@ -159,15 +183,15 @@ const Profile = () => {
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {user?.email}
             </Typography>
-            <Chip 
-              label={user?.role === 'admin' ? 'Admin' : user?.role === 'content_manager' ? 'Content Manager' : 'Customer'} 
-              color="primary" 
-              size="small" 
-              sx={{ mt: 1 }} 
+            <Chip
+              label={user?.role === 'admin' ? 'Admin' : user?.role === 'content_manager' ? 'Content Manager' : 'Customer'}
+              color="primary"
+              size="small"
+              sx={{ mt: 1 }}
             />
           </Paper>
         </Grid>
-        
+
         <Grid item xs={12} md={9}>
           <Paper sx={{ p: 3 }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -180,13 +204,13 @@ const Profile = () => {
                 )}
               </Tabs>
             </Box>
-            
+
             {updateSuccess && (
               <Alert severity="success" sx={{ mt: 2 }}>
                 Updated successfully!
               </Alert>
             )}
-            
+
             {/* Profile Tab */}
             <TabPanel value={value} index={0}>
               <Box component="form" onSubmit={handleUpdateProfile} sx={{ mt: 3 }}>
@@ -231,7 +255,6 @@ const Profile = () => {
                 </Button>
               </Box>
             </TabPanel>
-            
             {/* Password Tab */}
             <TabPanel value={value} index={1}>
               <Box component="form" onSubmit={handleUpdatePassword} sx={{ mt: 3 }}>
@@ -276,13 +299,13 @@ const Profile = () => {
                 </Button>
               </Box>
             </TabPanel>
-            
+
             {/* Orders Tab */}
             <TabPanel value={value} index={2}>
               <Typography variant="h6" gutterBottom>
                 Your Orders
               </Typography>
-              
+
               <List>
                 <ListItem sx={{ bgcolor: 'background.default', mb: 2 }}>
                   <ListItemText
@@ -292,24 +315,23 @@ const Profile = () => {
                 </ListItem>
               </List>
             </TabPanel>
-            
+
             {/* Upload Audio Tab (for content creators and admins) */}
             {(user?.role === 'admin' || user?.role === 'content_manager') && (
               <TabPanel value={value} index={3}>
                 <Typography variant="h6" gutterBottom>
                   Upload New Audio Product
                 </Typography>
-                
+
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3, mb: 3 }}>
                       <Typography variant="subtitle1" gutterBottom>
                         1. Upload Audio File
                       </Typography>
-                      
+
                       <Box sx={{ mb: 2 }}>
                         <input
-                          accept="audio/*"
                           style={{ display: 'none' }}
                           id="audio-file-upload"
                           type="file"
@@ -325,13 +347,13 @@ const Profile = () => {
                           </Button>
                         </label>
                       </Box>
-                      
+
                       {selectedFile && (
                         <Typography variant="body2" gutterBottom>
                           Selected: {selectedFile.name}
                         </Typography>
                       )}
-                      
+
                       <Button
                         variant="contained"
                         onClick={handleUploadFile}
@@ -340,15 +362,15 @@ const Profile = () => {
                       >
                         {uploadLoading ? <CircularProgress size={24} /> : 'Upload'}
                       </Button>
-                      
+
                       {uploadError && (
                         <Alert severity="error" sx={{ mt: 2 }}>
-                          {typeof uploadError === 'object' 
-                            ? Object.values(uploadError).flat().join(', ') 
+                          {typeof uploadError === 'object'
+                            ? Object.values(uploadError).flat().join(', ')
                             : uploadError}
                         </Alert>
                       )}
-                      
+
                       {audioFile && (
                         <Alert severity="success" sx={{ mt: 2 }}>
                           File uploaded successfully! You can now create the product.
@@ -356,13 +378,13 @@ const Profile = () => {
                       )}
                     </Paper>
                   </Grid>
-                  
+
                   <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3 }}>
                       <Typography variant="subtitle1" gutterBottom>
                         2. Create Product
                       </Typography>
-                      
+
                       <Box component="form" onSubmit={handleCreateProduct}>
                         <TextField
                           fullWidth
@@ -379,7 +401,7 @@ const Profile = () => {
                           label="Description"
                           name="description"
                           multiline
-                          rows={4}
+                          rows={3}
                           value={productForm.description}
                           onChange={handleProductChange}
                           margin="normal"
@@ -387,34 +409,56 @@ const Profile = () => {
                         <TextField
                           fullWidth
                           required
-                          label="Price ($)"
+                          label="Price"
                           name="price"
                           type="number"
-                          InputProps={{ inputProps: { min: 0, step: 0.01 } }}
                           value={productForm.price}
                           onChange={handleProductChange}
                           margin="normal"
+                          InputProps={{
+                            startAdornment: <span>$</span>,
+                          }}
                         />
                         <TextField
                           select
                           fullWidth
-                          label="Category"
-                          name="category"
-                          value={productForm.category}
+                          required
+                          label="Categories"
+                          name="categories"
+                          value={productForm.categories || []}
                           onChange={handleProductChange}
                           margin="normal"
                           SelectProps={{
-                            native: true,
+                            multiple: true,
+                            renderValue: (selected) => {
+                              const selectedNames = selected.map(id =>
+                                categories.find(cat => cat.id === id)?.name
+                              ).filter(Boolean).join(', ');
+                              return selectedNames || "No categories selected";
+                            }
                           }}
                         >
-                          <option value="">Select a category</option>
-                          {categories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))}
+                          {categories && categories.length > 0 ? (
+                            categories.map((category) => (
+                              <MenuItem key={category.id} value={category.id}>
+                                {category.name}
+                              </MenuItem>
+                            ))
+                          ) : (
+                            <>
+                              <MenuItem value="Ambient">Ambient</MenuItem>
+                              <MenuItem value="Electronic">Electronic</MenuItem>
+                              <MenuItem value="Hip Hop">Hip Hop</MenuItem>
+                              <MenuItem value="Jazz">Jazz</MenuItem>
+                              <MenuItem value="Rock">Rock</MenuItem>
+                              <MenuItem value="Classical">Classical</MenuItem>
+                              <MenuItem value="Lo-Fi">Lo-Fi</MenuItem>
+                              <MenuItem value="Cinematic">Cinematic</MenuItem>
+                              <MenuItem value="Sound Effects">Sound Effects</MenuItem>
+                              <MenuItem value="Vocals">Vocals</MenuItem>
+                            </>
+                          )}
                         </TextField>
-                        
                         <Button
                           type="submit"
                           variant="contained"
@@ -436,26 +480,5 @@ const Profile = () => {
     </Container>
   );
 };
-
-// TabPanel component
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-  
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`profile-tabpanel-${index}`}
-      aria-labelledby={`profile-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
 
 export default Profile;

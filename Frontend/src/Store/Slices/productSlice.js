@@ -2,68 +2,66 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from 'axios';
 
 export const fetchProducts = createAsyncThunk(
-    'products/fetchProducts',
-    async ({ category, search, minPrice, maxPrice}, {rejectwithValue}) => 
-    {
-        try {
-            let url = '/api/products/';
-            const params = {};
+  'products/fetchProducts',
+  async ({ category, search, minPrice, maxPrice }, { rejectwithValue }) => {
+    try {
+      let url = '/api/products/';
+      const params = {};
 
-            if (category) params.category = category;
-            if (search) params.search = search;
-            if (minPrice) params.minPrice = minPrice;
-            if (maxPrice) params.maxPrice = maxPrice;
+      if (category) params.category = category;
+      if (search) params.search = search;
+      if (minPrice) params.minPrice = minPrice;
+      if (maxPrice) params.maxPrice = maxPrice;
 
-            const response = await axios.get(url,{params});
-            return response.data;
-        }
-        catch (error) {
-            return rejectwithValue(error.response.data);
-        }
-        }
+      const response = await axios.get(url, { params });
+      return response.data;
+    }
+    catch (error) {
+      return rejectwithValue(error.response.data);
+    }
+  }
 );
 
 export const fetchProductDetails = createAsyncThunk(
-    'products/fetchProductDetails',
-    async (id, {rejectwithValue}) => {
-        try {
-            const response = await axios.get(`api/products/${id}/`);
-            return response.data;
-        } catch (error) {
-            return rejectwithValue(error.response.data);
-        }
-        }
+  'products/fetchProductDetails',
+  async (id, { rejectwithValue }) => {
+    try {
+      const response = await axios.get(`api/products/${id}/`);
+      return response.data;
+    } catch (error) {
+      return rejectwithValue(error.response.data);
+    }
+  }
 );
 
 export const createProduct = createAsyncThunk(
-    'products/createProduct',
-    async (productData, {rejectwithValue}) => {
-        try {
-        const response = await axios.post('api/products/',productData);
-        return response.data;
-        } catch (error) {
-            return rejectwithValue(error.response.data);
-        }
+  'products/createProduct',
+  async (productData, { rejectwithValue }) => {
+    try {
+      const response = await axios.post('api/products/', productData);
+      return response.data;
+    } catch (error) {
+      return rejectwithValue(error.response.data);
     }
+  }
 );
- export const uploadAudioFile = createAsyncThunk(
-    'products/uploadAudioFile',
-    async (fileData, {rejectwithValue}) => {
-        try {
-            const formData = new FormData();
-            formData.append('audio_file', fileData); 
-            const response = await axios.post('api/products/upload_audio/',formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            return response.data;
-        } catch (error) {
-            return rejectwithValue(error.response.data);
+export const uploadAudioFile = createAsyncThunk(
+  'products/uploadAudioFile',
+  async (fileData, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio-file', fileData);
+      const response = await axios.post('api/products/upload-audio/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
     }
+  }
 );
-
 const initialState = {
   products: [],
   product: null,

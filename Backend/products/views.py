@@ -7,7 +7,7 @@ from .serializers import ProductSerializer, AudioFileSerializer
 from .permissions import IsSellerOrReadOnly
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
-from .utlis import validate_audio_file, get_audio_metadata
+from .utils import validate_audio_file, get_audio_metadata
 # Create your views here.
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
