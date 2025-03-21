@@ -235,6 +235,16 @@ const Home = () => {
                     onChange={handleFilterChange}
                   >
                     <MenuItem value="">All Categories</MenuItem>
+                    <MenuItem value="Ambient">Ambient</MenuItem>
+                    <MenuItem value="Electronic">Electronic</MenuItem>
+                    <MenuItem value="Hip Hop">Hip Hop</MenuItem>
+                    <MenuItem value="Jazz">Jazz</MenuItem>
+                    <MenuItem value="Rock">Rock</MenuItem>
+                    <MenuItem value="Classical">Classical</MenuItem>
+                    <MenuItem value="Lo-Fi">Lo-Fi</MenuItem>
+                    <MenuItem value="Cinematic">Cinematic</MenuItem>
+                    <MenuItem value="Bollywood">Bollywood</MenuItem>
+
                     {categories.map(category => (
                       <MenuItem key={category.id} value={category.id}>
                         {category.name}
