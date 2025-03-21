@@ -70,7 +70,7 @@ export const fetchUserProfile = createAsyncThunk(
 
 export const logout = createAsyncThunk(
   'auth/logout',
-  async (_, { getState, rejectWithValue }) => {
+  async ({ getState, rejectWithValue }) => {
     try {
       const { token } = getState().auth;
       await axios.post('http://localhost:8000/api/auth/logout/', {}, {
@@ -89,7 +89,7 @@ export const logout = createAsyncThunk(
 // New refresh token function
 export const refreshToken = createAsyncThunk(
   'auth/refreshToken',
-  async (_, { rejectWithValue }) => {
+  async ({ rejectWithValue }) => {
     try {
       const refresh = localStorage.getItem('refreshToken');
       if (!refresh) {

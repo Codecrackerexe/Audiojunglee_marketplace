@@ -15,7 +15,7 @@ import ProductDetail from './Pages/ProductDetail';
 import Cart from './Pages/Cart';
 import Profile from './Pages/Profile';
 import PrivateRoute from './Components/PrivateRoute';
-
+import Checkout from './Pages/Checkout';
 
 const theme = createTheme({
   palette: {
@@ -53,6 +53,11 @@ function App() {
             <Route path="/profile" element={
               <PrivateRoute>
                 <Profile />
+              </PrivateRoute>
+            } />
+            <Route path="/checkout" element={
+              <PrivateRoute>
+                <Checkout />
               </PrivateRoute>
             } />
           </Routes>

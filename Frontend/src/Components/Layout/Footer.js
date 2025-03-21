@@ -1,5 +1,7 @@
 import React from 'react';
-import { Box, Container, Typography, Link, Grid, Divider, IconButton, Stack } from '@mui/material';
+import { Box, Container, Typography, Grid, Divider, IconButton, Stack } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import Link from '@mui/material/Link';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import InstagramIcon from '@mui/icons-material/Instagram';
@@ -8,8 +10,8 @@ import MusicNoteIcon from '@mui/icons-material/MusicNote';
 
 const Footer = () => {
   return (
-    <Box 
-      component='footer' 
+    <Box
+      component='footer'
       sx={{
         bgcolor: '#121212',
         color: 'white',
@@ -53,54 +55,74 @@ const Footer = () => {
               </IconButton>
             </Stack>
           </Grid>
-          
+
           <Grid item xs={12} sm={3}>
             <Typography variant='h6' sx={{ fontWeight: 'bold', mb: 2 }}>
               Quick Links
             </Typography>
-            <Link href="/" color='inherit' sx={{ 
-              display: 'block', 
-              mb: 1.5, 
-              textDecoration: 'none',
-              '&:hover': { color: '#2196f3', pl: 0.5, transition: 'all 0.2s' } 
-            }}>
+            <Link
+              component={RouterLink}
+              to="/"
+              color='inherit'
+              sx={{
+                display: 'block',
+                mb: 1.5,
+                textDecoration: 'none',
+                '&:hover': { color: '#2196f3', pl: 0.5, transition: 'all 0.2s' }
+              }}
+            >
               Home
             </Link>
-            <Link href="/login" color="inherit" sx={{ 
-              display: 'block', 
-              mb: 1.5, 
-              textDecoration: 'none',
-              '&:hover': { color: '#2196f3', pl: 0.5, transition: 'all 0.2s' } 
-            }}>
+            <Link
+              component={RouterLink}
+              to="/login"
+              color="inherit"
+              sx={{
+                display: 'block',
+                mb: 1.5,
+                textDecoration: 'none',
+                '&:hover': { color: '#2196f3', pl: 0.5, transition: 'all 0.2s' }
+              }}
+            >
               Login
             </Link>
-            <Link href="/register" color="inherit" sx={{ 
-              display: 'block', 
-              mb: 1.5, 
-              textDecoration: 'none',
-              '&:hover': { color: '#2196f3', pl: 0.5, transition: 'all 0.2s' } 
-            }}>
+            <Link
+              component={RouterLink}
+              to="/register"
+              color="inherit"
+              sx={{
+                display: 'block',
+                mb: 1.5,
+                textDecoration: 'none',
+                '&:hover': { color: '#2196f3', pl: 0.5, transition: 'all 0.2s' }
+              }}
+            >
               Register
             </Link>
-            <Link href="/products" color="inherit" sx={{ 
-              display: 'block', 
-              mb: 1.5, 
-              textDecoration: 'none',
-              '&:hover': { color: '#2196f3', pl: 0.5, transition: 'all 0.2s' } 
-            }}>
+            <Link
+              component={RouterLink}
+              to="/products"
+              color="inherit"
+              sx={{
+                display: 'block',
+                mb: 1.5,
+                textDecoration: 'none',
+                '&:hover': { color: '#2196f3', pl: 0.5, transition: 'all 0.2s' }
+              }}
+            >
               Browse Tracks
             </Link>
           </Grid>
-          
+
           <Grid item xs={12} sm={4}>
             <Typography variant='h6' sx={{ fontWeight: 'bold', mb: 2 }}>
               Contact Us
             </Typography>
-            <Box sx={{ 
-              p: 2, 
-              bgcolor: 'rgba(255,255,255,0.05)', 
+            <Box sx={{
+              p: 2,
+              bgcolor: 'rgba(255,255,255,0.05)',
               borderRadius: 2,
-              '&:hover': { 
+              '&:hover': {
                 bgcolor: 'rgba(255,255,255,0.08)',
                 transform: 'translateY(-3px)',
                 transition: 'all 0.3s'
@@ -115,9 +137,9 @@ const Footer = () => {
             </Box>
           </Grid>
         </Grid>
-        
+
         <Divider sx={{ my: 4, bgcolor: 'rgba(255,255,255,0.1)' }} />
-        
+
         <Box sx={{ textAlign: 'center' }}>
           <Typography variant='body2' color='text.secondary'>
             © {new Date().getFullYear()} AudioJunglee. All rights reserved.

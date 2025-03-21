@@ -4,6 +4,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import wave
 import contextlib
+from mutagen import File as MutagenFile
 
 def validate_audio_file(file):
     valid_extensions = ['.mp3','.wav','.flac']
@@ -22,15 +23,16 @@ def get_audio_metadata(file):
     metadata = {
         'file_size': file.size,
         'format': os.path.splitext(file.name)[1][1:],
-        'duration': None,
-        'sample_rate': None
+        'duration': 0,
+        'sample_rate': 44100
     }
 
-    if metadata['format'].lower() == 'wav':
-        path = default_storage.save(f'tmp/{file.name}', ContentFile(file.read()))
-        temp_file_path = os.path.join(default_storage.location, path)
+    # Save to a temporary file
+    path = default_storage.save(f'tmp/{file.name}', ContentFile(file.read()))
+    temp_file_path = os.path.join(default_storage.location, path)
 
-        try:
+    try:
+        if metadata['format'].lower() == 'wav':
             with contextlib.closing(wave.open(temp_file_path, 'r')) as f:
                 frames = f.getnframes()
                 rate = f.getframerate()
@@ -38,11 +40,18 @@ def get_audio_metadata(file):
 
                 metadata['duration'] = duration
                 metadata['sample_rate'] = rate
-        except Exception as e:
-            print(f"Error extracting WAV metadata: {e}")
-        finally:
-            file.seek(0) #reset file pointer for further use
-            default_storage.delete(path) #remove temp file
-        
-        return metadata
-
+        else:
+            # Use mutagen for other formats
+            audio = MutagenFile(temp_file_path)
+            if audio is not None:
+                metadata['duration'] = audio.info.length
+                if hasattr(audio.info, 'sample_rate'):
+                    metadata['sample_rate'] = audio.info.sample_rate
+    except Exception as e:
+        print(f"Error extracting audio metadata: {e}")
+        # Still return the metadata with default values
+    finally:
+        file.seek(0)  # Reset file pointer
+        default_storage.delete(path)  # Clean up
+    
+    return metadata

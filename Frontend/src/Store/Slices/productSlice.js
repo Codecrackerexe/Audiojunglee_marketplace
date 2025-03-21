@@ -50,8 +50,8 @@ export const uploadAudioFile = createAsyncThunk(
   async (fileData, { rejectWithValue }) => {
     try {
       const formData = new FormData();
-      formData.append('audio-file', fileData);
-      const response = await axios.post('api/products/upload-audio/', formData, {
+      formData.append('audio_file', fileData);
+      const response = await axios.post('http://127.0.0.1:8000/api/products/upload-audio/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

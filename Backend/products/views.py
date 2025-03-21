@@ -5,9 +5,9 @@ from django.db.models import Q
 from .models import Product, AudioFile
 from .serializers import ProductSerializer, AudioFileSerializer
 from .permissions import IsSellerOrReadOnly
-from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from .utils import validate_audio_file, get_audio_metadata
+
 # Create your views here.
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
@@ -40,28 +40,36 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(products, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['POST'], permission_classes=[permissions.IsAuthenticated],
+    @action(detail=False, methods=['post'], url_path='upload-audio', 
+            permission_classes=[permissions.AllowAny],
             parser_classes=[MultiPartParser, FormParser])
-    
     def upload_audio(self, request):
-        audio_file = request.files.get('audio_file')
+        audio_file = request.FILES.get('audio_file')
 
         if not audio_file:
             return Response({'error': 'No audio file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         is_valid, msg = validate_audio_file(audio_file)
+        
+        if not is_valid:
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
 
         metadata = get_audio_metadata(audio_file)
+        
+        if not metadata:
+            return Response({'error': 'Failed to extract audio metadata'}, status=status.HTTP_400_BAD_REQUEST)
 
-        #AudioFile obj
+        required_keys = ['duration', 'file_size', 'sample_rate']
+        for key in required_keys:
+            if key not in metadata:
+                return Response({'error': f'Missing metadata: {key}'}, status=status.HTTP_400_BAD_REQUEST)
+
         audio_file_obj = AudioFile.objects.create(
-            file = audio_file,
-            duration = metadata['duration'],
-            file_size = metadata['file_size'],
-            format = metadata['sample_rate']
+            file=audio_file,
+            duration=metadata['duration'],
+            file_size=metadata['file_size'],
+            format=metadata['sample_rate']
         )
 
-        serializier = AudioFileSerializer(audio_file_obj)
-        return Response(serializier.data, status=status.HTTP_201_CREATED)
-    
-
+        serializer = AudioFileSerializer(audio_file_obj)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

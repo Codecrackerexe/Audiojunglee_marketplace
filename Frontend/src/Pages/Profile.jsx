@@ -5,7 +5,8 @@ import { fetchCategories } from '../Store/Slices/categorySlice';
 import {
   Container, Typography, Box, Paper, Grid, TextField, Button,
   Avatar, Tab, Tabs, List, ListItem, ListItemText, Chip,
-  CircularProgress, Alert, MenuItem
+  CircularProgress, Alert, MenuItem,
+  ListSubheader
 } from '@mui/material';
 import { uploadAudioFile, createProduct } from '../Store/Slices/productSlice';
 
@@ -446,6 +447,7 @@ const Profile = () => {
                             ))
                           ) : (
                             <>
+                              <ListSubheader>Select any category</ListSubheader>
                               <MenuItem value="Ambient">Ambient</MenuItem>
                               <MenuItem value="Electronic">Electronic</MenuItem>
                               <MenuItem value="Hip Hop">Hip Hop</MenuItem>
@@ -454,8 +456,7 @@ const Profile = () => {
                               <MenuItem value="Classical">Classical</MenuItem>
                               <MenuItem value="Lo-Fi">Lo-Fi</MenuItem>
                               <MenuItem value="Cinematic">Cinematic</MenuItem>
-                              <MenuItem value="Sound Effects">Sound Effects</MenuItem>
-                              <MenuItem value="Vocals">Vocals</MenuItem>
+                              <MenuItem value="Bollywood">Bollywood</MenuItem>
                             </>
                           )}
                         </TextField>
