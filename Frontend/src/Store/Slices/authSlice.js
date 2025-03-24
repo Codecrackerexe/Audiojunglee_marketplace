@@ -70,9 +70,9 @@ export const fetchUserProfile = createAsyncThunk(
 
 export const logout = createAsyncThunk(
   'auth/logout',
-  async ({ getState, rejectWithValue }) => {
+  async (_, thunkAPI) => {
     try {
-      const { token } = getState().auth;
+      const { token } = thunkAPI.getState().auth;
       await axios.post('http://localhost:8000/api/auth/logout/', {}, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -85,7 +85,6 @@ export const logout = createAsyncThunk(
     }
   }
 );
-
 // New refresh token function
 export const refreshToken = createAsyncThunk(
   'auth/refreshToken',

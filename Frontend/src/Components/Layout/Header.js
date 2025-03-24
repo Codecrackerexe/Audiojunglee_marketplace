@@ -175,7 +175,7 @@ const Header = () => {
   const handleLogout = () => {
     dispatch(logout());
     handleMenuClose();
-    navigate('/');
+    navigate('/login');
   };
 
   const handleSearch = (e) => {
