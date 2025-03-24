@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchUserProfile } from '../Store/Slices/authSlice';
 import { fetchCategories } from '../Store/Slices/categorySlice';
+import { updateUserProfile, updateUserPassword } from '../Store/Slices/authSlice';
 import {
   Container, Typography, Box, Paper, Grid, TextField, Button,
   Avatar, Tab, Tabs, List, ListItem, ListItemText, Chip,
@@ -51,6 +52,10 @@ const Profile = () => {
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
+  const [passwordUpdateLoading, setPasswordUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
+
 
   const dispatch = useDispatch();
 
@@ -118,19 +123,51 @@ const Profile = () => {
 
   const handleUpdateProfile = (e) => {
     e.preventDefault();
-    setTimeout(() => {
-      setUpdateSuccess(true);
-      setTimeout(() => setUpdateSuccess(false), 3000);
-    }, 1000);
+    setProfileUpdateLoading(true);
+    setUpdateError(null);
+
+    dispatch(updateUserProfile(profileData))
+      .unwrap()
+      .then(() => {
+        setUpdateSuccess(true);
+        setTimeout(() => setUpdateSuccess(false), 3000);
+      })
+      .catch((error) => {
+        setUpdateError(error);
+      })
+      .finally(() => {
+        setProfileUpdateLoading(false);
+      });
   };
 
   const handleUpdatePassword = (e) => {
     e.preventDefault();
-    setTimeout(() => {
-      setUpdateSuccess(true);
-      setNewPassword({ current: '', new: '', confirm: '' });
-      setTimeout(() => setUpdateSuccess(false), 3000);
-    }, 1000);
+
+    // Validate passwords
+    if (newPassword.new !== newPassword.confirm) {
+      setUpdateError("New passwords don't match");
+      return;
+    }
+
+    setPasswordUpdateLoading(true);
+    setUpdateError(null);
+
+    dispatch(updateUserPassword({
+      current_password: newPassword.current,
+      new_password: newPassword.new
+    }))
+      .unwrap()
+      .then(() => {
+        setUpdateSuccess(true);
+        setNewPassword({ current: '', new: '', confirm: '' });
+        setTimeout(() => setUpdateSuccess(false), 3000);
+      })
+      .catch((error) => {
+        setUpdateError(error);
+      })
+      .finally(() => {
+        setPasswordUpdateLoading(false);
+      });
   };
 
   const handleCreateProduct = (e) => {
@@ -213,6 +250,13 @@ const Profile = () => {
             )}
 
             {/* Profile Tab */}
+            {updateError && (
+              <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+                {typeof updateError === 'object'
+                  ? Object.values(updateError).flat().join(', ')
+                  : updateError}
+              </Alert>
+            )}
             <TabPanel value={value} index={0}>
               <Box component="form" onSubmit={handleUpdateProfile} sx={{ mt: 3 }}>
                 <Grid container spacing={2}>
@@ -250,6 +294,7 @@ const Profile = () => {
                 <Button
                   type="submit"
                   variant="contained"
+                  disabled={profileUpdateLoading}
                   sx={{ mt: 3 }}
                 >
                   Update Profile
@@ -257,6 +302,13 @@ const Profile = () => {
               </Box>
             </TabPanel>
             {/* Password Tab */}
+            {updateError && (
+              <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+                {typeof updateError === 'object'
+                  ? Object.values(updateError).flat().join(', ')
+                  : updateError}
+              </Alert>
+            )}
             <TabPanel value={value} index={1}>
               <Box component="form" onSubmit={handleUpdatePassword} sx={{ mt: 3 }}>
                 <Grid container spacing={2}>
@@ -294,9 +346,11 @@ const Profile = () => {
                 <Button
                   type="submit"
                   variant="contained"
+                  disabled={passwordUpdateLoading}
                   sx={{ mt: 3 }}
                 >
-                  Update Password
+                  {passwordUpdateLoading ? <CircularProgress size={24} /> : 'Update Password'}
+
                 </Button>
               </Box>
             </TabPanel>

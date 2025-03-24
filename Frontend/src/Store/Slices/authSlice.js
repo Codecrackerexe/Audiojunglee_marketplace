@@ -68,6 +68,34 @@ export const fetchUserProfile = createAsyncThunk(
   }
 );
 
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateUserProfile',
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const response = await api.patch('http://localhost:8000/api/auth/profile/', profileData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || 'Failed to update profile'
+      );
+    }
+  }
+);
+
+export const updateUserPassword = createAsyncThunk(
+  'auth/updateUserPassword',
+  async (passwordData, { rejectWithValue }) => {
+    try {
+      const response = await api.post('http://localhost:8000/api/auth/change-password', passwordData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || 'Failed to update password'
+      );
+    }
+  }
+);
+
 export const logout = createAsyncThunk(
   'auth/logout',
   async (_, thunkAPI) => {
@@ -154,6 +182,33 @@ const authSlice = createSlice({
         }
       })
       .addCase(login.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      //update profile
+      .addCase(updateUserProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = { ...state.user, ...action.payload };
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      //update password
+      .addCase(updateUserPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUserPassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateUserPassword.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
