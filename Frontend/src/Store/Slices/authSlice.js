@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../Services/api";
 import { jwtDecode } from 'jwt-decode';
 
 // Token validation function
@@ -30,7 +30,7 @@ export const login = createAsyncThunk(
   'auth/login',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/login/', userData);
+      const response = await api.post('http://localhost:8000/api/auth/login/', userData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Login failed');
@@ -42,7 +42,7 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/register/', userData);
+      const response = await api.post('http://localhost:8000/api/auth/register/', userData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Registration failed');
@@ -55,7 +55,7 @@ export const fetchUserProfile = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const { token } = getState().auth;
-      const response = await axios.get('http://localhost:8000/api/auth/profile/', {
+      const response = await api.get('http://localhost:8000/api/auth/profile/', {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -73,7 +73,7 @@ export const logout = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const { token } = thunkAPI.getState().auth;
-      await axios.post('http://localhost:8000/api/auth/logout/', {}, {
+      await api.post('http://localhost:8000/api/auth/logout/', {}, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -95,7 +95,7 @@ export const refreshToken = createAsyncThunk(
         return rejectWithValue('No refresh token available');
       }
 
-      const response = await axios.post('http://localhost:8000/api/token/refresh/', {
+      const response = await api.post('http://localhost:8000/api/token/refresh/', {
         refresh: refresh
       });
 
