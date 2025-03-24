@@ -5,6 +5,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -101,3 +104,95 @@ def profile_view(request):
         'email': user.email,
         'role': role
     })
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def update_profile_view(request):
+    """
+    Update user profile information
+    """
+    user = request.user
+    allowed_fields = ['username', 'email', 'bio', 'first_name', 'last_name']
+    update_data = {}
+    
+    for field in allowed_fields:
+        if field in request.data:
+            update_data[field] = request.data[field]
+    
+    # Validate email uniqueness
+    if 'email' in update_data and update_data['email'] != user.email:
+        if User.objects.filter(email=update_data['email']).exists():
+            return Response(
+                {"error": "This email is already in use."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    # Validate username uniqueness
+    if 'username' in update_data and update_data['username'] != user.username:
+        if User.objects.filter(username=update_data['username']).exists():
+            return Response(
+                {"error": "This username is already in use."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    # Update user fields
+    for key, value in update_data.items():
+        setattr(user, key, value)
+    
+    user.save()
+    
+    # Return updated user data
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "bio": getattr(user, 'bio', ''),
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "role": getattr(user, 'role', 'customer'),
+        "profile_picture": request.build_absolute_uri(user.profile_picture.url) if hasattr(user, 'profile_picture') and user.profile_picture else None,
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password_view(request):
+    """
+    Change user password
+    """
+    user = request.user
+    
+    # Get password data from request
+    current_password = request.data.get('current_password')
+    new_password = request.data.get('new_password')
+    
+    # Validate required fields
+    if not current_password or not new_password:
+        return Response(
+            {"error": "Both current password and new password are required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Check current password
+    if not user.check_password(current_password):
+        return Response(
+            {"error": "Current password is incorrect."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Validate new password
+    try:
+        validate_password(new_password, user)
+    except ValidationError as e:
+        return Response(
+            {"error": e.messages},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Set new password
+    user.set_password(new_password)
+    user.save()
+    
+    return Response(
+        {"message": "Password updated successfully."},
+        status=status.HTTP_200_OK
+    )

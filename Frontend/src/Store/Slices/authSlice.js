@@ -1,39 +1,27 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../../Services/api";
-import { jwtDecode } from 'jwt-decode';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../../Services/api';
 
-// Token validation function
-const checkTokenValidity = () => {
-  const token = localStorage.getItem('token');
-  if (!token) return false;
-
-  try {
-    const decodedToken = jwtDecode(token);
-    const currentTime = Date.now() / 1000;
-
-    return decodedToken.exp > currentTime;
-  } catch (error) {
-    return false;
-  }
-};
-
-// Initial state with token validation
+// Initial state
 const initialState = {
   user: null,
   token: localStorage.getItem('token') || null,
-  isAuthenticated: checkTokenValidity(),
+  refreshToken: localStorage.getItem('refreshToken') || null,
+  isAuthenticated: !!localStorage.getItem('token'),
   loading: false,
   error: null
 };
 
+// Async thunks
 export const login = createAsyncThunk(
   'auth/login',
-  async (userData, { rejectWithValue }) => {
+  async (credentials, { rejectWithValue }) => {
     try {
-      const response = await api.post('http://localhost:8000/api/auth/login/', userData);
+      const response = await api.post('/auth/login/', credentials);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || 'Login failed');
+      return rejectWithValue(
+        error.response?.data || 'Failed to login'
+      );
     }
   }
 );
@@ -42,10 +30,31 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await api.post('http://localhost:8000/api/auth/register/', userData);
+      const response = await api.post('/auth/register/', userData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || 'Registration failed');
+      return rejectWithValue(
+        error.response?.data || 'Failed to register'
+      );
+    }
+  }
+);
+
+export const logout = createAsyncThunk(
+  'auth/logout',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const { auth } = getState();
+      await api.post('/auth/logout/', {}, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`
+        }
+      });
+      return null;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || 'Failed to logout'
+      );
     }
   }
 );
@@ -54,25 +63,31 @@ export const fetchUserProfile = createAsyncThunk(
   'auth/fetchUserProfile',
   async (_, { getState, rejectWithValue }) => {
     try {
-      const { token } = getState().auth;
-      const response = await api.get('http://localhost:8000/api/auth/profile/', {
+      const { auth } = getState();
+      const response = await api.get('/auth/profile/', {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${auth.token}`
         }
       });
-
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || 'Failed to fetch profile');
+      return rejectWithValue(
+        error.response?.data || 'Failed to fetch user profile'
+      );
     }
   }
 );
 
 export const updateUserProfile = createAsyncThunk(
   'auth/updateUserProfile',
-  async (profileData, { rejectWithValue }) => {
+  async (profileData, { getState, rejectWithValue }) => {
     try {
-      const response = await api.patch('http://localhost:8000/api/auth/profile/', profileData);
+      const { auth } = getState();
+      const response = await api.patch('/auth/update-profile/', profileData, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`
+        }
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -84,9 +99,14 @@ export const updateUserProfile = createAsyncThunk(
 
 export const updateUserPassword = createAsyncThunk(
   'auth/updateUserPassword',
-  async (passwordData, { rejectWithValue }) => {
+  async (passwordData, { getState, rejectWithValue }) => {
     try {
-      const response = await api.post('http://localhost:8000/api/auth/change-password', passwordData);
+      const { auth } = getState();
+      const response = await api.post('/auth/change-password/', passwordData, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`
+        }
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -96,76 +116,23 @@ export const updateUserPassword = createAsyncThunk(
   }
 );
 
-export const logout = createAsyncThunk(
-  'auth/logout',
-  async (_, thunkAPI) => {
-    try {
-      const { token } = thunkAPI.getState().auth;
-      await api.post('http://localhost:8000/api/auth/logout/', {}, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      return null;
-    } catch (error) {
-      return null;
-    }
-  }
-);
-// New refresh token function
-export const refreshToken = createAsyncThunk(
-  'auth/refreshToken',
-  async ({ rejectWithValue }) => {
-    try {
-      const refresh = localStorage.getItem('refreshToken');
-      if (!refresh) {
-        return rejectWithValue('No refresh token available');
-      }
-
-      const response = await api.post('http://localhost:8000/api/token/refresh/', {
-        refresh: refresh
-      });
-
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || 'Token refresh failed');
-    }
-  }
-);
-
+// Auth slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    refreshToken: (state, action) => {
+      state.token = action.payload.access;
+      state.refreshToken = action.payload.refresh;
+      localStorage.setItem('token', action.payload.access);
+      localStorage.setItem('refreshToken', action.payload.refresh);
     }
   },
-
   extraReducers: (builder) => {
     builder
-      // Register
-      .addCase(register.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(register.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        // For JWT, store both access and refresh tokens
-        state.token = action.payload.access || action.payload.token;
-        localStorage.setItem('token', action.payload.access || action.payload.token);
-        if (action.payload.refresh) {
-          localStorage.setItem('refreshToken', action.payload.refresh);
-        }
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
       // Login
       .addCase(login.pending, (state) => {
         state.loading = true;
@@ -173,47 +140,63 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.token = action.payload.access || action.payload.token;
-        localStorage.setItem('token', action.payload.access || action.payload.token);
-        if (action.payload.refresh) {
-          localStorage.setItem('refreshToken', action.payload.refresh);
-        }
+        state.token = action.payload.access;
+        state.refreshToken = action.payload.refresh;
+        state.isAuthenticated = true;
+        localStorage.setItem('token', action.payload.access);
+        localStorage.setItem('refreshToken', action.payload.refresh);
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.isAuthenticated = false;
       })
 
-      //update profile
-      .addCase(updateUserProfile.pending, (state) => {
+      // Register
+      .addCase(register.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(updateUserProfile.fulfilled, (state, action) => {
+      .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = { ...state.user, ...action.payload };
+        state.user = action.payload.user;
+        state.token = action.payload.access;
+        state.refreshToken = action.payload.refresh;
+        state.isAuthenticated = true;
+        localStorage.setItem('token', action.payload.access);
+        localStorage.setItem('refreshToken', action.payload.refresh);
       })
-      .addCase(updateUserProfile.rejected, (state, action) => {
+      .addCase(register.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      //update password
-      .addCase(updateUserPassword.pending, (state) => {
+      // Logout
+      .addCase(logout.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
-      .addCase(updateUserPassword.fulfilled, (state) => {
+      .addCase(logout.fulfilled, (state) => {
         state.loading = false;
+        state.user = null;
+        state.token = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
       })
-      .addCase(updateUserPassword.rejected, (state, action) => {
+      .addCase(logout.rejected, (state) => {
         state.loading = false;
-        state.error = action.payload;
+        // Still clear everything even if logout fails on server
+        state.user = null;
+        state.token = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
       })
 
-      // Fetch Profile
+      // Fetch User Profile
       .addCase(fetchUserProfile.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -227,29 +210,34 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Logout
-      .addCase(logout.fulfilled, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+      // Update User Profile
+      .addCase(updateUserProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
 
-      // Refresh Token
-      .addCase(refreshToken.fulfilled, (state, action) => {
-        state.token = action.payload.access;
-        localStorage.setItem('token', action.payload.access);
+      // Update User Password
+      .addCase(updateUserPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
-      .addCase(refreshToken.rejected, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+      .addCase(updateUserPassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateUserPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   }
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, refreshToken } = authSlice.actions;
 export default authSlice.reducer;
