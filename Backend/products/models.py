@@ -1,4 +1,3 @@
-# models.py
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -13,14 +12,13 @@ class Category(models.Model):
 
 class AudioFile(models.Model):
     file = models.FileField(upload_to='audio_files/')
-    duration = models.FloatField()
-    file_size = models.IntegerField()
-    format = models.CharField(max_length=50)
+    duration = models.FloatField(default=0.0)
+    file_size = models.IntegerField(default=0)
+    format = models.CharField(max_length=50, default="unknown")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return self.file.name
-
 class Product(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
