@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from 'axios';
+import api from "../../Services/api";
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
@@ -13,7 +13,7 @@ export const fetchProducts = createAsyncThunk(
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
 
-      const response = await axios.get(url, { params });
+      const response = await api.get(url, { params });
       return response.data;
     }
     catch (error) {
@@ -26,7 +26,7 @@ export const fetchProductDetails = createAsyncThunk(
   'products/fetchProductDetails',
   async (id, { rejectwithValue }) => {
     try {
-      const response = await axios.get(`api/products/${id}/`);
+      const response = await api.get(`api/products/${id}/`);
       return response.data;
     } catch (error) {
       return rejectwithValue(error.response.data);
@@ -36,12 +36,12 @@ export const fetchProductDetails = createAsyncThunk(
 
 export const createProduct = createAsyncThunk(
   'products/createProduct',
-  async (productData, { rejectwithValue }) => {
+  async (productData, { rejectWithValue }) => {
     try {
-      const response = await axios.post('api/products/', productData);
+      const response = await api.post('api/products/', productData);
       return response.data;
     } catch (error) {
-      return rejectwithValue(error.response.data);
+      return rejectWithValue(error.response.data);
     }
   }
 );
@@ -51,7 +51,7 @@ export const uploadAudioFile = createAsyncThunk(
     try {
       const formData = new FormData();
       formData.append('audio_file', fileData);
-      const response = await axios.post('http://127.0.0.1:8000/api/products/upload-audio/', formData, {
+      const response = await api.post('http://127.0.0.1:8000/api/products/upload-audio/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

@@ -1,14 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-// Base URL for API requests
-const API_URL = 'http://localhost:8000/api';
+import api from '../../Services/api';
 
 export const fetchReviews = createAsyncThunk(
   'reviews/fetchReviews',
   async (productId, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/products/${productId}/reviews`);
+      const response = await api.get(`${API_URL}/products/${productId}/reviews`);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -23,7 +20,7 @@ export const submitReview = createAsyncThunk(
   async ({ productId, rating, text }, { rejectWithValue, getState }) => {
     try {
       const { token } = getState().auth;
-      
+
       const config = {
         headers: {
           'Content-Type': 'application/json',
@@ -31,12 +28,12 @@ export const submitReview = createAsyncThunk(
         },
       };
 
-      const response = await axios.post(
+      const response = await api.post(
         `${API_URL}/products/${productId}/reviews`,
         { rating, text },
         config
       );
-      
+
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -84,7 +81,7 @@ const reviewsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Submit review
       .addCase(submitReview.pending, (state) => {
         state.reviewLoading = true;
@@ -94,7 +91,7 @@ const reviewsSlice = createSlice({
       .addCase(submitReview.fulfilled, (state, action) => {
         state.reviewLoading = false;
         state.success = true;
-        
+
         if (Array.isArray(action.payload)) {
           state.reviews = action.payload;
         } else {
