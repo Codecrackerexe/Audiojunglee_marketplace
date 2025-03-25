@@ -2,19 +2,18 @@ from rest_framework import viewsets, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db.models import Q
-from .models import Product, AudioFile
+from .models import Product, AudioFile, Category
 from .serializers import ProductSerializer, AudioFileSerializer
 from .permissions import IsSellerOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 from .utils import validate_audio_file, get_audio_metadata
 
-# Create your views here.
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsSellerOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'description', 'category__name']
+    search_fields = ['title', 'description', 'categories__name']
     ordering_fields = ['created_at', 'price', 'title']
     
     def get_queryset(self):
@@ -24,7 +23,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         max_price = self.request.query_params.get('max_price', None)
         
         if category:
-            queryset = queryset.filter(Q(category__id=category) | Q(category__parent__id=category))
+            # Filter by category name instead of ID
+            queryset = queryset.filter(categories__name=category)
         
         if min_price:
             queryset = queryset.filter(price__gte=min_price)
@@ -32,7 +32,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
             
-        return queryset
+        return queryset.distinct()  # Use distinct to avoid duplicates
     
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def my_products(self, request):
