@@ -1,11 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../Services/api";
 
+const token = localStorage.getItem('token');
+
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async ({ category, search, minPrice, maxPrice }, { rejectwithValue }) => {
     try {
-      let url = '/api/products/';
+      let url = '/products/';
       const params = {};
 
       if (category) params.category = category;
@@ -24,24 +26,28 @@ export const fetchProducts = createAsyncThunk(
 
 export const fetchProductDetails = createAsyncThunk(
   'products/fetchProductDetails',
-  async (id, { rejectwithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
       const response = await api.get(`/products/${id}/`);
       return response.data;
     } catch (error) {
-      return rejectwithValue(error.response.data);
+      return rejectWithValue(error.response.data);
     }
   }
 );
 
 export const createProduct = createAsyncThunk(
   'products/createProduct',
-  async (productData, { rejectwithValue }) => {
+  async (productData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/products/', productData);
+      const response = await api.post('/products/', productData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       return response.data;
     } catch (error) {
-      return rejectwithValue(error.response.data);
+      return rejectWithValue(error.response.data);
     }
   }
 );
