@@ -5,7 +5,7 @@ export const fetchReviews = createAsyncThunk(
   'reviews/fetchReviews',
   async (productId, { rejectWithValue }) => {
     try {
-      const response = await api.get(`${API_URL}/products/${productId}/reviews`);
+      const response = await api.get(`$/products/${productId}/reviews`);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -29,7 +29,7 @@ export const submitReview = createAsyncThunk(
       };
 
       const response = await api.post(
-        `${API_URL}/products/${productId}/reviews`,
+        `$/products/${productId}/reviews`,
         { rating, text },
         config
       );
