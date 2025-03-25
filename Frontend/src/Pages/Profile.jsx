@@ -8,8 +8,19 @@ import {
   Avatar, Tab, Tabs, List, ListItem, ListItemText, Chip,
   CircularProgress, Alert, MenuItem,
 } from '@mui/material';
-import PropTypes from 'prop-types';
 import { uploadAudioFile, createProduct } from '../Store/Slices/productSlice';
+
+const PREDEFINED_CATEGORIES = [
+  { id: "Ambient", name: "Ambient" },
+  { id: "Electronic", name: "Electronic" },
+  { id: "Hip Hop", name: "Hip Hop" },
+  { id: "Jazz", name: "Jazz" },
+  { id: "Rock metal", name: "Rock Metal" },
+  { id: "Classical", name: "Classical" },
+  { id: "Lo-Fi", name: "Lo-Fi" },
+  { id: "Cinematic", name: "Cinematic" },
+  { id: "Bollywood", name: "Bollywood" }
+];
 
 // TabPanel component for the tabs
 function TabPanel(props) {
@@ -33,12 +44,6 @@ function TabPanel(props) {
   );
 }
 
-TabPanel.propTypes = {
-  children: PropTypes.node,
-  index: PropTypes.number.isRequired,
-  value: PropTypes.number.isRequired,
-};
-
 const Profile = () => {
   const [value, setValue] = useState(0);
   const [profileData, setProfileData] = useState({
@@ -55,11 +60,12 @@ const Profile = () => {
     title: '',
     description: '',
     price: '',
-    category: ''
+    category: [] // Changed from string to array
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showAudioUploadSuccess, setShowAudioUploadSuccess] = useState(false);
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   const [passwordUpdateLoading, setPasswordUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
@@ -91,6 +97,21 @@ const Profile = () => {
     }
   }, [user]);
 
+  // Audio file upload success message timeout
+  useEffect(() => {
+    if (audioFile && !uploadLoading) {
+      setShowAudioUploadSuccess(true);
+
+      // Set a timeout to hide the alert after 3 seconds
+      const timer = setTimeout(() => {
+        setShowAudioUploadSuccess(false);
+      }, 3000);
+
+      // Clean up the timer on component unmount or when audioFile changes
+      return () => clearTimeout(timer);
+    }
+  }, [audioFile, uploadLoading]);
+
   // Show product errors in the update error state
   useEffect(() => {
     if (productError) {
@@ -112,6 +133,18 @@ const Profile = () => {
     formSetter({
       ...formData,
       [e.target.name]: e.target.value
+    });
+  };
+
+  const handleCategoryChange = (e) => {
+    const {
+      target: { value },
+    } = e;
+
+    const categoryValues = typeof value === 'string' ? value.split(',') : value;
+    setProductForm({
+      ...productForm,
+      category: categoryValues
     });
   };
 
@@ -211,7 +244,7 @@ const Profile = () => {
       title: productForm.title,
       description: productForm.description,
       price: parseFloat(productForm.price),
-      category: productForm.category ? parseInt(productForm.category) : null,
+      categories: productForm.category,
       audio_file: audioFile.id
     };
 
@@ -224,7 +257,7 @@ const Profile = () => {
           title: '',
           description: '',
           price: '',
-          category: ''
+          category: []
         });
         setSelectedFile(null);
       })
@@ -468,7 +501,7 @@ const Profile = () => {
                         </Alert>
                       )}
 
-                      {audioFile && (
+                      {audioFile && showAudioUploadSuccess && (
                         <Alert severity="success" sx={{ mt: 2 }}>
                           File uploaded successfully! ID: {audioFile.id}
                         </Alert>
@@ -523,15 +556,22 @@ const Profile = () => {
                             <TextField
                               select
                               fullWidth
-                              label="Category"
+                              label="Categories"
                               name="category"
                               value={productForm.category}
-                              onChange={(e) => handleFormChange(e, setProductForm, productForm)}
+                              onChange={handleCategoryChange}
+                              SelectProps={{
+                                multiple: true,
+                                renderValue: (selected) => (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selected.map((value) => (
+                                      <Chip key={value} label={value} />
+                                    ))}
+                                  </Box>
+                                ),
+                              }}
                             >
-                              <MenuItem value="">
-                                <em>Select a category</em>
-                              </MenuItem>
-                              {categories.map((category) => (
+                              {PREDEFINED_CATEGORIES.map((category) => (
                                 <MenuItem key={category.id} value={category.id}>
                                   {category.name}
                                 </MenuItem>

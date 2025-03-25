@@ -20,7 +20,7 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='products')
+    categories = models.ManyToManyField(Category, related_name='products')
     audio_file = models.OneToOneField(AudioFile, on_delete=models.CASCADE, related_name='product')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
