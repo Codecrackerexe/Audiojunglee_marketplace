@@ -26,7 +26,7 @@ export const fetchProductDetails = createAsyncThunk(
   'products/fetchProductDetails',
   async (id, { rejectwithValue }) => {
     try {
-      const response = await api.get(`api/products/${id}/`);
+      const response = await api.get(`/products/${id}/`);
       return response.data;
     } catch (error) {
       return rejectwithValue(error.response.data);
@@ -38,7 +38,7 @@ export const createProduct = createAsyncThunk(
   'products/createProduct',
   async (productData, { rejectwithValue }) => {
     try {
-      const response = await api.post('api/products/', productData);
+      const response = await api.post('/products/', productData);
       return response.data;
     } catch (error) {
       return rejectwithValue(error.response.data);
@@ -51,7 +51,7 @@ export const uploadAudioFile = createAsyncThunk(
     try {
       const formData = new FormData();
       formData.append('audio_file', fileData);
-      const response = await api.post('api/products/upload-audio/', formData, {
+      const response = await api.post('/products/upload-audio/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

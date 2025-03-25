@@ -1,12 +1,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
 import api from "../../Services/api";
 
 export const fetchCategories = createAsyncThunk(
   'categories/fetchCategories',
   async ({ rejectwithValue }) => {
     try {
-      const response = await api.get('api/categories/');
+      const response = await api.get('/categories/');
       return response.data;
     } catch (error) {
       return rejectwithValue(error.response.data);
@@ -19,7 +18,7 @@ export const fetchCategoryTree = createAsyncThunk(
   'categories/fetchCategoryTree',
   async ({ rejectwithValue }) => {
     try {
-      const response = await api.get('api/categories/tree');
+      const response = await api.get('/categories/tree');
       return response.data;
     } catch (error) {
       return rejectwithValue(error.response.data);
