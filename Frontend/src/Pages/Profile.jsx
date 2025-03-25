@@ -7,8 +7,8 @@ import {
   Container, Typography, Box, Paper, Grid, TextField, Button,
   Avatar, Tab, Tabs, List, ListItem, ListItemText, Chip,
   CircularProgress, Alert, MenuItem,
-  ListSubheader
 } from '@mui/material';
+import PropTypes from 'prop-types';
 import { uploadAudioFile, createProduct } from '../Store/Slices/productSlice';
 
 // TabPanel component for the tabs
@@ -21,6 +21,7 @@ function TabPanel(props) {
       hidden={value !== index}
       id={`profile-tabpanel-${index}`}
       aria-labelledby={`profile-tab-${index}`}
+      aria-controls={`profile-tabpanel-${index}`}
       {...other}
     >
       {value === index && (
@@ -31,6 +32,12 @@ function TabPanel(props) {
     </div>
   );
 }
+
+TabPanel.propTypes = {
+  children: PropTypes.node,
+  index: PropTypes.number.isRequired,
+  value: PropTypes.number.isRequired,
+};
 
 const Profile = () => {
   const [value, setValue] = useState(0);
@@ -52,21 +59,21 @@ const Profile = () => {
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   const [passwordUpdateLoading, setPasswordUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
 
-
   const dispatch = useDispatch();
 
   const { user, loading: userLoading } = useSelector(state => state.auth);
-  // Use a default empty array if categories is undefined
   const { categories = [] } = useSelector(state => state.categories);
   const {
     audioFile,
     uploadLoading,
     uploadError,
-    loading: productLoading
+    loading: productLoading,
+    error: productError
   } = useSelector(state => state.products);
 
   useEffect(() => {
@@ -84,41 +91,59 @@ const Profile = () => {
     }
   }, [user]);
 
+  // Show product errors in the update error state
+  useEffect(() => {
+    if (productError) {
+      setUpdateError(productError);
+    }
+  }, [productError]);
+
+  // Clear error when changing tabs
+  useEffect(() => {
+    setUpdateError(null);
+  }, [value]);
+
   const handleTabChange = (event, newValue) => {
     setValue(newValue);
+    setUpdateError(null);
   };
 
-  const handleProfileChange = (e) => {
-    setProfileData({
-      ...profileData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handlePasswordChange = (e) => {
-    setNewPassword({
-      ...newPassword,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleProductChange = (e) => {
-    setProductForm({
-      ...productForm,
+  const handleFormChange = (e, formSetter, formData) => {
+    formSetter({
+      ...formData,
       [e.target.name]: e.target.value
     });
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file type
+      if (!file.type.startsWith('audio/')) {
+        setUpdateError('Please select an audio file');
+        return;
+      }
+      // Check file size (e.g., 10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        setUpdateError('File size exceeds 10MB limit');
+        return;
+      }
+      setSelectedFile(file);
+      setUpdateError(null);
     }
   };
 
   const handleUploadFile = () => {
     if (selectedFile) {
+      setUpdateError(null);
       dispatch(uploadAudioFile(selectedFile));
     }
+  };
+
+  const showSuccessMessage = (message) => {
+    setSuccessMessage(message);
+    setUpdateSuccess(true);
+    setTimeout(() => setUpdateSuccess(false), 3000);
   };
 
   const handleUpdateProfile = (e) => {
@@ -129,8 +154,7 @@ const Profile = () => {
     dispatch(updateUserProfile(profileData))
       .unwrap()
       .then(() => {
-        setUpdateSuccess(true);
-        setTimeout(() => setUpdateSuccess(false), 3000);
+        showSuccessMessage('Profile updated successfully!');
       })
       .catch((error) => {
         setUpdateError(error);
@@ -149,6 +173,12 @@ const Profile = () => {
       return;
     }
 
+    // Validate password strength
+    if (newPassword.new.length < 8) {
+      setUpdateError("Password must be at least 8 characters long");
+      return;
+    }
+
     setPasswordUpdateLoading(true);
     setUpdateError(null);
 
@@ -158,9 +188,8 @@ const Profile = () => {
     }))
       .unwrap()
       .then(() => {
-        setUpdateSuccess(true);
+        showSuccessMessage('Password updated successfully!');
         setNewPassword({ current: '', new: '', confirm: '' });
-        setTimeout(() => setUpdateSuccess(false), 3000);
       })
       .catch((error) => {
         setUpdateError(error);
@@ -174,6 +203,7 @@ const Profile = () => {
     e.preventDefault();
 
     if (!audioFile) {
+      setUpdateError('Please upload an audio file first');
       return;
     }
 
@@ -185,16 +215,31 @@ const Profile = () => {
       audio_file: audioFile.id
     };
 
-    dispatch(createProduct(productData));
+    dispatch(createProduct(productData))
+      .unwrap()
+      .then(() => {
+        showSuccessMessage('Product created successfully!');
+        // Reset form after submission
+        setProductForm({
+          title: '',
+          description: '',
+          price: '',
+          category: ''
+        });
+        setSelectedFile(null);
+      })
+      .catch((error) => {
+        setUpdateError(error);
+      });
+  };
 
-    // Reset form after submission
-    setProductForm({
-      title: '',
-      description: '',
-      price: '',
-      category: ''
-    });
-    setSelectedFile(null);
+  const formatError = (error) => {
+    if (!error) return '';
+
+    if (typeof error === 'object') {
+      return Object.values(error).flat().join(', ');
+    }
+    return error;
   };
 
   if (userLoading) {
@@ -234,29 +279,28 @@ const Profile = () => {
           <Paper sx={{ p: 3 }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={value} onChange={handleTabChange} aria-label="profile tabs">
-                <Tab label="Profile" id="profile-tab-0" />
-                <Tab label="Password" id="profile-tab-1" />
-                <Tab label="My Orders" id="profile-tab-2" />
+                <Tab label="Profile" id="profile-tab-0" aria-controls="profile-tabpanel-0" />
+                <Tab label="Password" id="profile-tab-1" aria-controls="profile-tabpanel-1" />
+                <Tab label="My Orders" id="profile-tab-2" aria-controls="profile-tabpanel-2" />
                 {(user?.role === 'admin' || user?.role === 'content_manager') && (
-                  <Tab label="Upload Audio" id="profile-tab-3" />
+                  <Tab label="Upload Audio" id="profile-tab-3" aria-controls="profile-tabpanel-3" />
                 )}
               </Tabs>
             </Box>
 
             {updateSuccess && (
               <Alert severity="success" sx={{ mt: 2 }}>
-                Updated successfully!
+                {successMessage || 'Updated successfully!'}
+              </Alert>
+            )}
+
+            {updateError && (
+              <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+                {formatError(updateError)}
               </Alert>
             )}
 
             {/* Profile Tab */}
-            {updateError && (
-              <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
-                {typeof updateError === 'object'
-                  ? Object.values(updateError).flat().join(', ')
-                  : updateError}
-              </Alert>
-            )}
             <TabPanel value={value} index={0}>
               <Box component="form" onSubmit={handleUpdateProfile} sx={{ mt: 3 }}>
                 <Grid container spacing={2}>
@@ -266,7 +310,7 @@ const Profile = () => {
                       label="Username"
                       name="username"
                       value={profileData.username}
-                      onChange={handleProfileChange}
+                      onChange={(e) => handleFormChange(e, setProfileData, profileData)}
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -276,7 +320,7 @@ const Profile = () => {
                       name="email"
                       type="email"
                       value={profileData.email}
-                      onChange={handleProfileChange}
+                      onChange={(e) => handleFormChange(e, setProfileData, profileData)}
                     />
                   </Grid>
                   <Grid item xs={12}>
@@ -287,7 +331,7 @@ const Profile = () => {
                       multiline
                       rows={4}
                       value={profileData.bio}
-                      onChange={handleProfileChange}
+                      onChange={(e) => handleFormChange(e, setProfileData, profileData)}
                     />
                   </Grid>
                 </Grid>
@@ -297,49 +341,53 @@ const Profile = () => {
                   disabled={profileUpdateLoading}
                   sx={{ mt: 3 }}
                 >
-                  Update Profile
+                  {profileUpdateLoading ? <CircularProgress size={24} /> : 'Update Profile'}
                 </Button>
               </Box>
             </TabPanel>
+
             {/* Password Tab */}
-            {updateError && (
-              <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
-                {typeof updateError === 'object'
-                  ? Object.values(updateError).flat().join(', ')
-                  : updateError}
-              </Alert>
-            )}
             <TabPanel value={value} index={1}>
               <Box component="form" onSubmit={handleUpdatePassword} sx={{ mt: 3 }}>
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
+                      required
                       label="Current Password"
                       name="current"
                       type="password"
                       value={newPassword.current}
-                      onChange={handlePasswordChange}
+                      onChange={(e) => handleFormChange(e, setNewPassword, newPassword)}
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
+                      required
                       label="New Password"
                       name="new"
                       type="password"
                       value={newPassword.new}
-                      onChange={handlePasswordChange}
+                      onChange={(e) => handleFormChange(e, setNewPassword, newPassword)}
+                      helperText="Password must be at least 8 characters long"
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
+                      required
                       label="Confirm New Password"
                       name="confirm"
                       type="password"
                       value={newPassword.confirm}
-                      onChange={handlePasswordChange}
+                      onChange={(e) => handleFormChange(e, setNewPassword, newPassword)}
+                      error={newPassword.new !== newPassword.confirm && newPassword.confirm !== ''}
+                      helperText={
+                        newPassword.new !== newPassword.confirm && newPassword.confirm !== ''
+                          ? "Passwords don't match"
+                          : ""
+                      }
                     />
                   </Grid>
                 </Grid>
@@ -350,7 +398,6 @@ const Profile = () => {
                   sx={{ mt: 3 }}
                 >
                   {passwordUpdateLoading ? <CircularProgress size={24} /> : 'Update Password'}
-
                 </Button>
               </Box>
             </TabPanel>
@@ -391,13 +438,10 @@ const Profile = () => {
                           id="audio-file-upload"
                           type="file"
                           onChange={handleFileChange}
+                          accept="audio/*"
                         />
                         <label htmlFor="audio-file-upload">
-                          <Button
-                            variant="outlined"
-                            component="span"
-                            fullWidth
-                          >
+                          <Button variant="outlined" component="span" fullWidth>
                             Select Audio File
                           </Button>
                         </label>
@@ -413,22 +457,20 @@ const Profile = () => {
                         variant="contained"
                         onClick={handleUploadFile}
                         disabled={!selectedFile || uploadLoading}
-                        sx={{ mt: 1 }}
+                        fullWidth
                       >
-                        {uploadLoading ? <CircularProgress size={24} /> : 'Upload'}
+                        {uploadLoading ? <CircularProgress size={24} /> : 'Upload Audio'}
                       </Button>
 
                       {uploadError && (
                         <Alert severity="error" sx={{ mt: 2 }}>
-                          {typeof uploadError === 'object'
-                            ? Object.values(uploadError).flat().join(', ')
-                            : uploadError}
+                          {formatError(uploadError)}
                         </Alert>
                       )}
 
                       {audioFile && (
                         <Alert severity="success" sx={{ mt: 2 }}>
-                          File uploaded successfully! You can now create the product.
+                          File uploaded successfully! ID: {audioFile.id}
                         </Alert>
                       )}
                     </Paper>
@@ -437,88 +479,72 @@ const Profile = () => {
                   <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 3 }}>
                       <Typography variant="subtitle1" gutterBottom>
-                        2. Create Product
+                        2. Product Details
                       </Typography>
 
                       <Box component="form" onSubmit={handleCreateProduct}>
-                        <TextField
-                          fullWidth
-                          required
-                          label="Title"
-                          name="title"
-                          value={productForm.title}
-                          onChange={handleProductChange}
-                          margin="normal"
-                        />
-                        <TextField
-                          fullWidth
-                          required
-                          label="Description"
-                          name="description"
-                          multiline
-                          rows={3}
-                          value={productForm.description}
-                          onChange={handleProductChange}
-                          margin="normal"
-                        />
-                        <TextField
-                          fullWidth
-                          required
-                          label="Price"
-                          name="price"
-                          type="number"
-                          value={productForm.price}
-                          onChange={handleProductChange}
-                          margin="normal"
-                          InputProps={{
-                            startAdornment: <span>$</span>,
-                          }}
-                        />
-                        <TextField
-                          select
-                          fullWidth
-                          required
-                          label="Categories"
-                          name="categories"
-                          value={productForm.categories || []}
-                          onChange={handleProductChange}
-                          margin="normal"
-                          SelectProps={{
-                            multiple: true,
-                            renderValue: (selected) => {
-                              const selectedNames = selected.map(id =>
-                                categories.find(cat => cat.id === id)?.name
-                              ).filter(Boolean).join(', ');
-                              return selectedNames || "No categories selected";
-                            }
-                          }}
-                        >
-                          {categories && categories.length > 0 ? (
-                            categories.map((category) => (
-                              <MenuItem key={category.id} value={category.id}>
-                                {category.name}
+                        <Grid container spacing={2}>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              required
+                              label="Product Title"
+                              name="title"
+                              value={productForm.title}
+                              onChange={(e) => handleFormChange(e, setProductForm, productForm)}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              required
+                              label="Description"
+                              name="description"
+                              multiline
+                              rows={3}
+                              value={productForm.description}
+                              onChange={(e) => handleFormChange(e, setProductForm, productForm)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
+                              required
+                              label="Price"
+                              name="price"
+                              type="number"
+                              value={productForm.price}
+                              onChange={(e) => handleFormChange(e, setProductForm, productForm)}
+                              InputProps={{ startAdornment: '$' }}
+                              inputProps={{ min: 0, step: 0.01 }}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              select
+                              fullWidth
+                              label="Category"
+                              name="category"
+                              value={productForm.category}
+                              onChange={(e) => handleFormChange(e, setProductForm, productForm)}
+                            >
+                              <MenuItem value="">
+                                <em>Select a category</em>
                               </MenuItem>
-                            ))
-                          ) : (
-                            <>
-                              <ListSubheader>Select any category</ListSubheader>
-                              <MenuItem value="Ambient">Ambient</MenuItem>
-                              <MenuItem value="Electronic">Electronic</MenuItem>
-                              <MenuItem value="Hip Hop">Hip Hop</MenuItem>
-                              <MenuItem value="Jazz">Jazz</MenuItem>
-                              <MenuItem value="Rock">Rock</MenuItem>
-                              <MenuItem value="Classical">Classical</MenuItem>
-                              <MenuItem value="Lo-Fi">Lo-Fi</MenuItem>
-                              <MenuItem value="Cinematic">Cinematic</MenuItem>
-                              <MenuItem value="Bollywood">Bollywood</MenuItem>
-                            </>
-                          )}
-                        </TextField>
+                              {categories.map((category) => (
+                                <MenuItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          </Grid>
+                        </Grid>
+
                         <Button
                           type="submit"
                           variant="contained"
                           fullWidth
-                          disabled={!audioFile || productLoading}
+                          disabled={!audioFile || productLoading || !productForm.title || !productForm.price}
                           sx={{ mt: 3 }}
                         >
                           {productLoading ? <CircularProgress size={24} /> : 'Create Product'}
