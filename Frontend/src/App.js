@@ -13,6 +13,7 @@ import Login from './Pages/Login';
 import Register from './Pages/Register';
 import ProductDetail from './Pages/ProductDetail';
 import Cart from './Pages/Cart';
+import AdminDashboard from './Pages/AdminDashboard';
 import Profile from './Pages/Profile';
 import PrivateRoute from './Components/PrivateRoute';
 import Checkout from './Pages/Checkout';
@@ -57,6 +58,12 @@ function App() {
                 <Profile />
               </PrivateRoute>
             } />
+            <Route path="/admin" element={
+              <PrivateRoute>
+                <AdminDashboard />
+              </PrivateRoute>
+            } />
+
             <Route path="/checkout" element={
               <PrivateRoute>
                 <Checkout />

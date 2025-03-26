@@ -3,21 +3,21 @@ import { useDispatch, useSelector } from 'react-redux';
 import { register, clearError } from '../Store/Slices/authSlice';
 import { Link as RouterLink } from 'react-router-dom';
 import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Link,
-  Alert,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Paper,
-  Avatar,
-  useTheme
+    Container,
+    Box,
+    Typography,
+    TextField,
+    Button,
+    Link,
+    Alert,
+    CircularProgress,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Paper,
+    Avatar,
+    useTheme
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
@@ -31,15 +31,15 @@ const Register = () => {
     });
 
     const [validationErrors, setValidationErrors] = useState({});
-    
+
     const dispatch = useDispatch();
     const { loading, error } = useSelector(state => state.auth || {});
     const theme = useTheme();
 
     const handleChange = (e) => {
         if (error) dispatch(clearError());
-        setFormData({...formData, [e.target.name]: e.target.value});
-      
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+
         if (validationErrors[e.target.name]) {
             setValidationErrors({
                 ...validationErrors,
@@ -50,34 +50,34 @@ const Register = () => {
 
     const validateForm = () => {
         const errors = {};
-        
+
         if (!formData.username.trim()) {
             errors.username = 'Username is required';
         }
-        
+
         if (!formData.email.trim()) {
             errors.email = 'Email is required';
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
             errors.email = 'Email is invalid';
         }
-        
+
         if (!formData.password) {
             errors.password = 'Password is required';
         } else if (formData.password.length < 6) {
             errors.password = 'Password must be at least 6 characters';
         }
-        
+
         if (formData.password !== formData.password2) {
             errors.password2 = 'Passwords do not match';
         }
-        
+
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         if (validateForm()) {
             dispatch(register(formData));
         }
@@ -99,30 +99,30 @@ const Register = () => {
                 <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
                     <LockOutlinedIcon />
                 </Avatar>
-                
+
                 <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
                     Create an Account
                 </Typography>
-                
+
                 {error && (
-                    <Alert 
-                        severity="error" 
-                        sx={{ 
-                            width: '100%', 
+                    <Alert
+                        severity="error"
+                        sx={{
+                            width: '100%',
                             mb: 2,
                             borderRadius: theme.shape.borderRadius
                         }}
                     >
-                        {typeof error === 'object' ? Object.values(error).flat().join(', '): error}
+                        {typeof error === 'object' ? Object.values(error).flat().join(', ') : error}
                     </Alert>
                 )}
-                
+
                 {/* Show validation errors summary if any */}
                 {Object.keys(validationErrors).length > 0 && (
-                    <Alert 
-                        severity="error" 
-                        sx={{ 
-                            width: '100%', 
+                    <Alert
+                        severity="error"
+                        sx={{
+                            width: '100%',
                             mb: 2,
                             borderRadius: theme.shape.borderRadius
                         }}
@@ -147,7 +147,7 @@ const Register = () => {
                         error={!!validationErrors.username}
                         helperText={validationErrors.username}
                     />
-                    
+
                     <TextField
                         margin="normal"
                         required
@@ -162,7 +162,7 @@ const Register = () => {
                         error={!!validationErrors.email}
                         helperText={validationErrors.email}
                     />
-                    
+
                     <TextField
                         margin="normal"
                         required
@@ -177,7 +177,7 @@ const Register = () => {
                         error={!!validationErrors.password}
                         helperText={validationErrors.password}
                     />
-                    
+
                     <TextField
                         margin="normal"
                         required
@@ -192,7 +192,7 @@ const Register = () => {
                         error={!!validationErrors.password2}
                         helperText={validationErrors.password2}
                     />
-                    
+
                     <FormControl fullWidth margin="normal" variant="outlined">
                         <InputLabel id="role-label">Role</InputLabel>
                         <Select
@@ -205,15 +205,16 @@ const Register = () => {
                         >
                             <MenuItem value="customer">Customer</MenuItem>
                             <MenuItem value="content_manager">Content Manager</MenuItem>
+                            <MenuItem value="admin">Admin</MenuItem>
                         </Select>
                     </FormControl>
-                    
-                    <Button 
+
+                    <Button
                         type="submit"
                         fullWidth
                         variant="contained"
-                        sx={{ 
-                            mt: 3, 
+                        sx={{
+                            mt: 3,
                             mb: 2,
                             py: 1.5,
                             fontWeight: 'bold',
@@ -223,15 +224,15 @@ const Register = () => {
                     >
                         {loading ? <CircularProgress size={24} /> : "Create Account"}
                     </Button>
-                    
+
                     <Box sx={{ textAlign: 'center' }}>
-                        <Link 
-                            component={RouterLink} 
-                            to="/login" 
+                        <Link
+                            component={RouterLink}
+                            to="/login"
                             variant="body2"
-                            sx={{ 
+                            sx={{
                                 textDecoration: 'none',
-                                '&:hover': { textDecoration: 'underline' } 
+                                '&:hover': { textDecoration: 'underline' }
                             }}
                         >
                             Already have an account? Sign In
