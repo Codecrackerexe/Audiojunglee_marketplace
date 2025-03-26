@@ -16,6 +16,7 @@ import Cart from './Pages/Cart';
 import Profile from './Pages/Profile';
 import PrivateRoute from './Components/PrivateRoute';
 import Checkout from './Pages/Checkout';
+import FeaturedTracks from './Pages/Products';
 
 const theme = createTheme({
   palette: {
@@ -48,6 +49,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
             <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
+            <Route path="/products/" element={<FeaturedTracks />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/profile" element={
