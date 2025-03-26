@@ -395,17 +395,19 @@ const Home = () => {
                                 component="h2"
                                 sx={{
                                   fontWeight: 'bold',
-                                  height: '2.5em',
+                                  minHeight: '2.5em',
+                                  maxHeight: '2.5em',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   display: '-webkit-box',
                                   WebkitLineClamp: 2,
                                   WebkitBoxOrient: 'vertical',
+                                  lineHeight: 1.2,
+                                  wordBreak: 'break-word',
                                 }}
                               >
                                 {product.title}
                               </Typography>
-
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                 <Typography
                                   variant="h6"
