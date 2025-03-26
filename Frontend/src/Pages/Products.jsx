@@ -30,7 +30,7 @@ const FeaturedTracks = () => {
     ];
 
     return (
-        <Box sx={{ py: 4, backgroundColor: '#1e2130', color: 'white', minHeight: '100vh', px: 3 }}>
+        <Box sx={{ py: 4, color: 'white', minHeight: '100vh', px: 3 }}>
             <Typography variant="h6" component="h2" sx={{ mb: 4, fontWeight: 'normal' }}>
                 Found {tracks.length} tracks
             </Typography>
@@ -42,15 +42,16 @@ const FeaturedTracks = () => {
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
-                            backgroundColor: 'transparent',
+                            backgroundColor: '#262940', // Added visible background color to distinguish cards
                             color: 'white',
-                            boxShadow: 'none',
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.2)', // Added visible shadow for depth
+                            borderRadius: 2,
                             position: 'relative',
+                            p: 2, // Added padding inside card
                         }}>
                             <CardMedia
                                 sx={{
                                     height: 150,
-                                    backgroundColor: '#2742b6',
                                     borderRadius: 2,
                                     display: 'flex',
                                     justifyContent: 'center',
@@ -59,7 +60,6 @@ const FeaturedTracks = () => {
                                     overflow: 'hidden'
                                 }}
                             >
-                                {/* Display the image assigned to the urls */}
                                 <Box
                                     component="img"
                                     src={track.image}
