@@ -45,11 +45,7 @@ export const logout = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const { auth } = getState();
-      await api.post('/auth/logout/', {}, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
+      await api.post('/auth/logout/', {});
       return null;
     } catch (error) {
       return rejectWithValue(
@@ -61,14 +57,9 @@ export const logout = createAsyncThunk(
 
 export const fetchUserProfile = createAsyncThunk(
   'auth/fetchUserProfile',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const response = await api.get('/auth/profile/', {
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
+      const response = await api.get('/auth/profile/');
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -80,14 +71,9 @@ export const fetchUserProfile = createAsyncThunk(
 
 export const updateUserProfile = createAsyncThunk(
   'auth/updateUserProfile',
-  async (profileData, { getState, rejectWithValue }) => {
+  async (profileData, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const response = await api.patch('/auth/update-profile/', profileData, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
+      const response = await api.patch('/auth/update-profile/', profileData);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -99,14 +85,9 @@ export const updateUserProfile = createAsyncThunk(
 
 export const updateUserPassword = createAsyncThunk(
   'auth/updateUserPassword',
-  async (passwordData, { getState, rejectWithValue }) => {
+  async (passwordData, { rejectWithValue }) => {
     try {
-      const { auth } = getState();
-      const response = await api.post('/auth/change-password/', passwordData, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
+      const response = await api.post('/auth/change-password/', passwordData);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -207,7 +188,6 @@ const authSlice = createSlice({
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
       })
 
       // Update User Profile
