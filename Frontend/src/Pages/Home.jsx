@@ -322,7 +322,7 @@ const Home = () => {
                   <>
                     <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="h6" color="text.secondary">
-                        {pagination?.count ? `Found ${pagination.count} tracks` : 'Browse our collection'}
+                        Local tracks from device :
                       </Typography>
                       {isMobile && (
                         <Button
