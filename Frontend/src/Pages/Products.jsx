@@ -284,24 +284,25 @@ const Tracks = () => {
                                 },
                                 border: track.featured ? '1px solid rgba(63, 140, 244, 0.3)' : '1px solid rgba(255,255,255,0.05)'
                             }}>
-                                {track.featured && (
-                                    <Chip
-                                        label="Featured"
-                                        size="small"
-                                        sx={{
-                                            position: 'absolute',
-                                            top: 12,
-                                            right: 12,
-                                            backgroundColor: '#3b82f6',
-                                            color: 'white',
-                                            zIndex: 1,
-                                            fontSize: '0.7rem',
-                                            height: 24
-                                        }}
-                                    />
-                                )}
-
                                 <Box sx={{ position: 'relative' }}>
+
+                                    {track.featured && (
+                                        <Chip
+                                            label="Featured"
+                                            size="small"
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 12,
+                                                right: 12,
+                                                backgroundColor: '#3b82f6',
+                                                color: 'white',
+                                                zIndex: 1,
+                                                fontSize: '0.7rem',
+                                                height: 24
+                                            }}
+                                        />
+                                    )}
+
                                     <CardMedia
                                         sx={{
                                             height: 180,
