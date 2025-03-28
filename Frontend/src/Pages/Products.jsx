@@ -16,6 +16,7 @@ const Tracks = () => {
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isDarkMode = theme.palette.mode === 'dark';
 
     const tracksPerPage = 6;
 
@@ -249,13 +250,17 @@ const Tracks = () => {
 
     return (
         <Container maxWidth="lg">
-            <Box sx={{ py: 5, color: 'white', minHeight: '100vh' }}>
+            <Box sx={{
+                py: 5,
+                color: theme.palette.text.primary,
+                minHeight: '100vh'
+            }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
                     <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
                         Browse Audio Tracks
                     </Typography>
                     <Box>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
                             Showing {indexOfFirstTrack + 1}-{Math.min(indexOfLastTrack, allTracks.length)} of {allTracks.length} tracks
                         </Typography>
                     </Box>
@@ -268,230 +273,155 @@ const Tracks = () => {
                                 height: '100%',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                backgroundColor: 'rgba(38, 41, 64, 0.8)',
+                                backgroundColor: isDarkMode
+                                    ? 'rgba(38, 41, 64, 0.8)'
+                                    : 'rgba(255, 255, 255, 0.9)',
                                 backdropFilter: 'blur(10px)',
-                                color: 'white',
+                                color: theme.palette.text.primary,
                                 boxShadow: track.featured
-                                    ? '0 8px 24px rgba(63, 140, 244, 0.15)'
-                                    : '0 4px 12px rgba(0,0,0,0.15)',
+                                    ? `0 8px 24px ${isDarkMode ? 'rgba(63, 140, 244, 0.15)' : 'rgba(63, 140, 244, 0.25)'}`
+                                    : theme.shadows[3],
                                 borderRadius: 2,
                                 position: 'relative',
-                                p: 2,
-                                transition: 'all 0.3s ease',
+                                transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                                 '&:hover': {
-                                    transform: 'translateY(-8px)',
-                                    boxShadow: '0 12px 28px rgba(0,0,0,0.25)',
-                                },
-                                border: track.featured ? '1px solid rgba(63, 140, 244, 0.3)' : '1px solid rgba(255,255,255,0.05)'
+                                    transform: 'translateY(-4px)',
+                                    boxShadow: theme.shadows[8],
+                                }
                             }}>
-                                <Box sx={{ position: 'relative' }}>
-
-                                    {track.featured && (
-                                        <Chip
-                                            label="Featured"
-                                            size="small"
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 12,
-                                                right: 12,
-                                                backgroundColor: '#3b82f6',
-                                                color: 'white',
-                                                zIndex: 1,
-                                                fontSize: '0.7rem',
-                                                height: 24
-                                            }}
-                                        />
-                                    )}
-
-                                    <CardMedia
-                                        sx={{
-                                            height: 180,
-                                            borderRadius: 1.5,
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            mb: 2,
-                                            overflow: 'hidden',
-                                            '&::after': {
-                                                content: '""',
-                                                position: 'absolute',
-                                                top: 0,
-                                                left: 0,
-                                                width: '100%',
-                                                height: '100%',
-                                                background: 'rgba(0,0,0,0.2)',
-                                                borderRadius: 1.5,
-                                            }
-                                        }}
-                                    >
-                                        <Box
-                                            component="img"
-                                            src={track.image}
-                                            alt={track.title}
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                transition: 'transform 0.5s ease',
-                                                '&:hover': {
-                                                    transform: 'scale(1.05)'
-                                                }
-                                            }}
-                                        />
-                                    </CardMedia>
-
-                                    <Button
-                                        variant="contained"
-                                        onClick={() => togglePlay(track.id)}
-                                        aria-label={playing === track.id ? "Pause track" : "Play track"}
-                                        sx={{
-                                            position: 'absolute',
-                                            top: '50%',
-                                            left: '50%',
-                                            transform: 'translate(-50%, -50%)',
-                                            minWidth: '48px',
-                                            width: '48px',
-                                            height: '48px',
-                                            borderRadius: '50%',
-                                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                            color: '#1a1a2e',
-                                            zIndex: 2,
-                                            boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
-                                            '&:hover': {
-                                                backgroundColor: 'rgba(255, 255, 255, 1)',
-                                                transform: 'translate(-50%, -50%) scale(1.1)',
-                                            },
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                    >
-                                        {playing === track.id ? <PauseIcon /> : <PlayArrowIcon />}
-                                    </Button>
-
-                                    <IconButton
-                                        onClick={() => toggleFavorite(track.id)}
-                                        aria-label={favorites.includes(track.id) ? "Remove from favorites" : "Add to favorites"}
-                                        sx={{
-                                            position: 'absolute',
-                                            top: 10,
-                                            left: 10,
-                                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                            color: favorites.includes(track.id) ? '#f43f5e' : 'white',
-                                            zIndex: 2,
-                                            padding: '6px',
-                                            '&:hover': {
-                                                backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                                            }
-                                        }}
-                                    >
-                                        {favorites.includes(track.id) ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
-                                    </IconButton>
-                                </Box>
-
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                {track.featured && (
                                     <Chip
-                                        label={track.genre}
+                                        label="Featured"
                                         size="small"
                                         sx={{
-                                            backgroundColor: 'rgba(255,255,255,0.1)',
-                                            color: 'rgba(255,255,255,0.8)',
-                                            height: 22,
-                                            fontSize: '0.7rem'
+                                            position: 'absolute',
+                                            top: 12,
+                                            right: 12,
+                                            backgroundColor: theme.palette.primary.main,
+                                            color: theme.palette.primary.contrastText,
+                                            fontWeight: 'bold',
+                                            zIndex: 1
                                         }}
                                     />
-                                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
-                                        {track.duration}
-                                    </Typography>
-                                </Box>
-
-                                <CardContent sx={{ flexGrow: 1, p: 0 }}>
-                                    <Typography variant="h6" component="h3" gutterBottom sx={{
-                                        fontWeight: 600,
-                                        fontSize: '1.1rem',
-                                        lineHeight: 1.3,
-                                        mb: 0.5
-                                    }}>
-                                        {track.title}
-                                    </Typography>
-
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                        <Rating
-                                            value={track.rating}
-                                            precision={0.1}
-                                            size="small"
-                                            readOnly
-                                            sx={{
-                                                color: '#f59e0b',
-                                                fontSize: '0.8rem'
-                                            }}
-                                        />
-                                        <Typography variant="caption" sx={{ ml: 1, color: 'rgba(255,255,255,0.6)' }}>
-                                            {track.rating}
-                                        </Typography>
-                                    </Box>
-
-                                    <Typography variant="h6" sx={{
-                                        color: '#60a5fa',
-                                        fontWeight: 'bold',
-                                        mb: 1.5,
-                                        fontSize: '1.1rem'
-                                    }}>
-                                        {track.price}
-                                    </Typography>
-
-                                    <Typography variant="body2" sx={{
-                                        mb: 3,
-                                        color: 'rgba(255,255,255,0.7)',
-                                        fontSize: '0.85rem',
-                                        lineHeight: 1.5
-                                    }}>
-                                        {track.description.length > 100
-                                            ? `${track.description.substring(0, 100)}...`
-                                            : track.description}
-                                    </Typography>
-
+                                )}
+                                <Box sx={{ position: 'relative' }}>
+                                    <CardMedia
+                                        component="img"
+                                        height="180"
+                                        image={track.image}
+                                        alt={track.title}
+                                        sx={{
+                                            borderTopLeftRadius: 8,
+                                            borderTopRightRadius: 8,
+                                            filter: isDarkMode ? 'brightness(0.85)' : 'brightness(0.95)'
+                                        }}
+                                    />
                                     <Box sx={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        p: 1.5,
+                                        background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
                                         display: 'flex',
                                         justifyContent: 'space-between',
-                                        mt: 'auto',
-                                        pt: 1,
-                                        borderTop: '1px solid rgba(255,255,255,0.08)'
+                                        alignItems: 'center'
                                     }}>
-                                        <Button
-                                            variant="outlined"
+                                        <Typography variant="body2" sx={{ color: 'white', fontWeight: 'medium' }}>
+                                            {track.duration}
+                                        </Typography>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => togglePlay(track.id)}
                                             sx={{
-                                                borderColor: 'rgba(96, 165, 250, 0.5)',
-                                                color: '#60a5fa',
-                                                borderRadius: '50px',
-                                                px: 2,
-                                                py: 0.5,
-                                                fontSize: '0.8rem',
+                                                backgroundColor: 'rgba(255,255,255,0.15)',
+                                                color: 'white',
                                                 '&:hover': {
-                                                    borderColor: '#60a5fa',
-                                                    backgroundColor: 'rgba(96, 165, 250, 0.08)'
-                                                },
-                                                transition: 'all 0.2s ease'
+                                                    backgroundColor: theme.palette.primary.main,
+                                                }
                                             }}
                                         >
-                                            Details
-                                        </Button>
+                                            {playing === track.id ? <PauseIcon /> : <PlayArrowIcon />}
+                                        </IconButton>
+                                    </Box>
+                                </Box>
+
+                                <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                        <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
+                                            {track.title}
+                                        </Typography>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => toggleFavorite(track.id)}
+                                            sx={{
+                                                color: favorites.includes(track.id) ? 'red' : theme.palette.text.secondary,
+                                                p: 0.5
+                                            }}
+                                        >
+                                            {favorites.includes(track.id) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                                        </IconButton>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Chip
+                                            label={track.genre}
+                                            size="small"
+                                            sx={{
+                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                                color: theme.palette.text.primary,
+                                                mr: 1
+                                            }}
+                                        />
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <Rating
+                                                value={track.rating}
+                                                precision={0.1}
+                                                size="small"
+                                                readOnly
+                                                sx={{
+                                                    fontSize: '0.8rem',
+                                                    color: theme.palette.primary.main
+                                                }}
+                                            />
+                                            <Typography variant="body2" sx={{ ml: 0.5, color: theme.palette.text.secondary }}>
+                                                {track.rating}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    <Typography variant="body2" sx={{
+                                        color: theme.palette.text.secondary,
+                                        mb: 2,
+                                        display: '-webkit-box',
+                                        overflow: 'hidden',
+                                        WebkitBoxOrient: 'vertical',
+                                        WebkitLineClamp: 3,
+                                        lineHeight: '1.5',
+                                        height: '4.5em'
+                                    }}>
+                                        {track.description}
+                                    </Typography>
+
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
+                                            {track.price}
+                                        </Typography>
                                         <Button
                                             variant="contained"
+                                            size="small"
+                                            startIcon={<ShoppingCartIcon />}
                                             sx={{
-                                                backgroundColor: '#3b82f6',
-                                                borderRadius: '50%',
-                                                minWidth: '36px',
-                                                width: '36px',
-                                                height: '36px',
-                                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                                                backgroundColor: theme.palette.primary.main,
+                                                color: theme.palette.primary.contrastText,
                                                 '&:hover': {
-                                                    backgroundColor: '#60a5fa',
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: '0 6px 16px rgba(59, 130, 246, 0.4)'
+                                                    backgroundColor: theme.palette.primary.dark
                                                 },
-                                                transition: 'all 0.2s ease'
+                                                borderRadius: 6,
+                                                px: 2
                                             }}
                                         >
-                                            <ShoppingCartIcon fontSize="small" />
+                                            Add
                                         </Button>
                                     </Box>
                                 </CardContent>
@@ -500,48 +430,28 @@ const Tracks = () => {
                     ))}
                 </Grid>
 
-                {totalPages > 1 && (
-                    <Box sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        mt: 6,
-                        mb: 2
-                    }}>
-                        <Pagination
-                            count={totalPages}
-                            page={currentPage}
-                            onChange={handlePageChange}
-                            shape="rounded"
-                            size={isMobile ? "small" : "medium"}
-                            renderItem={(item) => (
-                                <PaginationItem
-                                    {...item}
-                                    sx={{
-                                        color: 'white',
-                                        backgroundColor: item.selected ? '#3b82f6' : 'rgba(255, 255, 255, 0.05)',
-                                        '&:hover': {
-                                            backgroundColor: item.selected ? '#3b82f6' : 'rgba(255, 255, 255, 0.1)',
-                                        },
-                                        transition: 'background-color 0.2s ease',
-                                        border: 'none',
-                                        margin: '0 3px',
-                                    }}
-                                />
-                            )}
-                        />
-                    </Box>
-                )}
-
-                <Typography variant="caption" sx={{
-                    display: 'block',
-                    textAlign: 'center',
-                    color: 'rgba(255,255,255,0.5)',
-                    mt: 2
-                }}>
-                    Displaying page {currentPage} of {totalPages}
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
+                    <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={handlePageChange}
+                        renderItem={(item) => (
+                            <PaginationItem
+                                {...item}
+                                sx={{
+                                    color: theme.palette.text.primary,
+                                    '&.Mui-selected': {
+                                        backgroundColor: theme.palette.primary.main,
+                                        color: theme.palette.primary.contrastText
+                                    }
+                                }}
+                            />
+                        )}
+                    />
+                </Box>
             </Box>
         </Container>
     );
 };
 export default Tracks;
+
