@@ -27,6 +27,7 @@ import {
   useScrollTrigger,
   Slide,
   ListItemIcon,
+  useTheme,
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import {
@@ -59,11 +60,11 @@ function HideOnScroll(props) {
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius * 5,
-  backgroundColor: alpha(theme.palette.common.white, 0.1),
-  border: `1px solid ${alpha(theme.palette.common.white, 0.15)}`,
+  backgroundColor: alpha(theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.black, 0.1),
+  border: `1px solid ${alpha(theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.black, 0.15)}`,
   backdropFilter: 'blur(12px)',
   '&:hover': {
-    backgroundColor: alpha(theme.palette.common.white, 0.18),
+    backgroundColor: alpha(theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.black, 0.18),
   },
   marginRight: theme.spacing(2),
   marginLeft: 0,
@@ -85,11 +86,11 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: alpha(theme.palette.common.white, 0.8),
+  color: alpha(theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.white, 0.8),
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: theme.palette.common.white,
+  color: theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.white,
   width: '100%',
   '& .MuiInputBase-input': {
     padding: theme.spacing(1.2, 1, 1.2, 0),
@@ -100,11 +101,11 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
       width: '24ch',
       '&:focus': {
         width: '34ch',
-        backgroundColor: alpha(theme.palette.common.white, 0.1),
+        backgroundColor: alpha(theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.black, 0.1),
       },
     },
     '&::placeholder': {
-      color: alpha(theme.palette.common.white, 0.7),
+      color: alpha(theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.white, 0.7),
       opacity: 1,
     },
   },
@@ -118,7 +119,7 @@ const NavButton = styled(Button)(({ theme }) => ({
   textTransform: 'none',
   transition: 'all 0.2s',
   '&:hover': {
-    backgroundColor: alpha(theme.palette.common.white, 0.15),
+    backgroundColor: alpha(theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.common.white, 0.15),
     transform: 'translateY(-2px)',
   },
 }));
@@ -148,11 +149,28 @@ const StyledBadge = styled(Badge)(({ theme }) => ({
   },
 }));
 
+const DrawerWrapper = styled(Box)(({ theme }) => ({
+  width: 280,
+  backgroundColor: theme.palette.background.paper,
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+}));
+
+const DrawerListItem = styled(ListItem)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius,
+  margin: theme.spacing(0.5, 1),
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+  },
+}));
+
 const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { mode, toggleColorMode } = useColorMode();
+  const theme = useTheme();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -195,7 +213,7 @@ const Header = () => {
     <Box sx={{ flexGrow: 1 }}>
       <HideOnScroll>
         <AppBar
-          position='fixed'
+          position='relative'
           elevation={0}
           sx={{
             background: mode === 'light'
@@ -274,6 +292,7 @@ const Header = () => {
                   sx={{
                     fontWeight: 600,
                     fontSize: '0.95rem',
+                    mr: 2,
                   }}
                 >
                   Home
@@ -285,7 +304,7 @@ const Header = () => {
                     component={RouterLink}
                     to="/cart"
                     sx={{
-                      mx: 1,
+                      mr: 2, // Added consistent right margin
                       transition: 'all 0.2s',
                       '&:hover': {
                         transform: 'scale(1.1)',
@@ -299,7 +318,6 @@ const Header = () => {
                   </IconButton>
                 </Tooltip>
 
-
                 {isAuthenticated ? (
                   <>
                     <Tooltip title="Account Menu">
@@ -311,7 +329,7 @@ const Header = () => {
                         onClick={handleProfileMenuOpen}
                         color="inherit"
                         sx={{
-                          ml: 1,
+                          mr: 2, // Added consistent right margin
                           transition: 'all 0.2s',
                           '&:hover': {
                             transform: 'scale(1.1)',
@@ -355,7 +373,7 @@ const Header = () => {
                           minWidth: 200,
                           mt: 1,
                           overflow: 'visible',
-                          boxShadow: '0 10px 40px rgba(0,0,0,0.1), 0 2px 10px rgba(0,0,0,0.05)',
+                          boxShadow: theme.shadows[4],
                           '&:before': {
                             content: '""',
                             display: 'block',
@@ -379,16 +397,31 @@ const Header = () => {
                         }
                       }}
                     >
-                      <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
+                      <Box sx={{ px: 2, py: 1.5 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                          {user.username || 'User'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {user.email || 'user@example.com'}
+                        </Typography>
+                      </Box>
+                      <Divider sx={{ my: 1 }} />
+                      <MenuItem onClick={handleMenuClose} component={RouterLink} to="/profile">
                         <ListItemIcon>
-                          <ProfileIcon fontSize="small" />
+                          <ProfileIcon fontSize="small" color="primary" />
                         </ListItemIcon>
-                        <ListItemText primary="Profile" />
+                        <ListItemText primary="My Profile" />
                       </MenuItem>
-                      {user?.role === 'admin' && (
-                        <MenuItem component={RouterLink} to="/admin" onClick={handleMenuClose}>
+                      <MenuItem onClick={handleMenuClose} component={RouterLink} to="/my-tracks">
+                        <ListItemIcon>
+                          <MusicIcon fontSize="small" color="primary" />
+                        </ListItemIcon>
+                        <ListItemText primary="My Tracks" />
+                      </MenuItem>
+                      {user.role === 'admin' && (
+                        <MenuItem onClick={handleMenuClose} component={RouterLink} to="/admin">
                           <ListItemIcon>
-                            <DashboardIcon fontSize="small" />
+                            <DashboardIcon fontSize="small" color="primary" />
                           </ListItemIcon>
                           <ListItemText primary="Admin Dashboard" />
                         </MenuItem>
@@ -396,21 +429,25 @@ const Header = () => {
                       <Divider sx={{ my: 1 }} />
                       <MenuItem onClick={handleLogout}>
                         <ListItemIcon>
-                          <LogoutIcon fontSize="small" />
+                          <LogoutIcon fontSize="small" color="error" />
                         </ListItemIcon>
-                        <ListItemText primary="Logout" />
+                        <ListItemText primary="Logout" primaryTypographyProps={{ color: 'error' }} />
                       </MenuItem>
                     </Menu>
                   </>
                 ) : (
                   <>
                     <NavButton
-                      color='inherit'
+                      color="inherit"
                       component={RouterLink}
                       to="/login"
+                      variant="outlined"
                       sx={{
-                        fontWeight: 600,
-                        fontSize: '0.95rem',
+                        borderColor: alpha('#ffffff', 0.5),
+                        '&:hover': {
+                          borderColor: '#ffffff',
+                          backgroundColor: alpha('#ffffff', 0.08),
+                        },
                       }}
                     >
                       Login
@@ -420,335 +457,204 @@ const Header = () => {
                       to="/register"
                       variant="contained"
                       sx={{
-                        bgcolor: alpha('#ffffff', 0.9),
-                        color: mode === 'light' ? '#3a86ff' : '#1e40af',
-                        fontWeight: 600,
-                        fontSize: '0.95rem',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        ml: 1.5,
+                        backgroundColor: theme.palette.secondary.main,
+                        color: theme.palette.secondary.contrastText,
                         '&:hover': {
-                          bgcolor: '#ffffff',
-                          boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
-                          transform: 'translateY(-2px)',
-                        }
+                          backgroundColor: theme.palette.secondary.dark,
+                        },
                       }}
                     >
-                      Register
+                      Sign Up
                     </NavButton>
                   </>
                 )}
-                <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
+              </Box>
+              <Tooltip title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+                <IconButton
+                  onClick={toggleColorMode}
+                  color="inherit"
+                  sx={{
+                    ml: 1,
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      transform: 'scale(1.1)',
+                      background: alpha('#ffffff', 0.1),
+                    }
+                  }}
+                >
+                  {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
+              </Tooltip>
+
+
+              {/* Mobile view */}
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center' }}>
+                <Tooltip title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
                   <IconButton
                     onClick={toggleColorMode}
                     color="inherit"
-                    sx={{
-                      ml: 1,
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        transform: 'scale(1.1)',
-                        background: alpha('#ffffff', 0.1),
-                      }
-                    }}
+                    sx={{ mr: 1 }}
                   >
-                    {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+                    {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                   </IconButton>
                 </Tooltip>
+                <Tooltip title="View Cart">
+                  <IconButton
+                    size="large"
+                    color="inherit"
+                    component={RouterLink}
+                    to="/cart"
+                    sx={{ mr: 1 }}
+                  >
+                    <StyledBadge badgeContent={items.length} color="secondary">
+                      <ShoppingCart />
+                    </StyledBadge>
+                  </IconButton>
+                </Tooltip>
+                {isAuthenticated && (
+                  <IconButton
+                    size="large"
+                    edge="end"
+                    aria-label="account of current user"
+                    aria-haspopup="true"
+                    onClick={handleProfileMenuOpen}
+                    color="inherit"
+                  >
+                    {user?.avatar ? (
+                      <Avatar
+                        src={user.avatar}
+                        alt={user.username}
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          border: '2px solid white',
+                        }}
+                      />
+                    ) : (
+                      <AccountCircle />
+                    )}
+                  </IconButton>
+                )}
               </Box>
             </Toolbar>
           </Container>
         </AppBar>
       </HideOnScroll>
-      <Toolbar />
 
-      {/* Mobile Drawer */}
       <Drawer
         anchor="left"
         open={drawerOpen}
         onClose={toggleDrawer(false)}
-        PaperProps={{
-          sx: {
-            width: 280,
-            borderRadius: '0 16px 16px 0',
-            background: mode === 'light'
-              ? 'linear-gradient(135deg, #3a86ff 0%, #4f46e5 100%)'
-              : 'linear-gradient(135deg, #1e40af 0%, #4338ca 100%)',
-            color: 'white',
-            boxShadow: '0 0 30px rgba(0,0,0,0.2)',
-          }
-        }}
       >
-        <Box
-          sx={{ width: '100%' }}
-          role="presentation"
-          onClick={toggleDrawer(false)}
-          onKeyDown={toggleDrawer(false)}
-        >
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            p: 3,
-            pb: 2.5,
-          }}>
+        <DrawerWrapper role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
+          <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
             <HeadphonesIcon
               fontSize="large"
               sx={{
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                color: theme.palette.primary.main,
+                fontSize: 40,
+                mb: 1
               }}
             />
-            <Typography
-              variant="h5"
-              sx={{
-                ml: 1.5,
-                fontWeight: 'bold',
-                background: 'linear-gradient(45deg, #FFFFFF 30%, #E0F7FA 90%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: '0 2px 10px rgba(0,0,0,0.1)',
-              }}
-            >
+            <Typography variant="h6" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
               AudioJunglee
             </Typography>
           </Box>
 
-          <Divider sx={{
-            bgcolor: alpha('#ffffff', 0.15),
-            mx: 2,
-            mb: 1
-          }} />
+          <Divider />
 
-          <List sx={{ px: 1.5, pt: 1 }}>
-            {isAuthenticated && (
-              <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                mb: 2,
-                mx: 1.5,
-                p: 1.5,
-                borderRadius: 2,
-                bgcolor: alpha('#ffffff', 0.1),
-              }}>
-                {user?.avatar ? (
-                  <Avatar
-                    src={user.avatar}
-                    alt={user.username}
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      border: '2px solid white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                    }}
-                  />
-                ) : (
-                  <Avatar sx={{
-                    width: 40,
-                    height: 40,
-                    bgcolor: alpha('#ffffff', 0.2),
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                  }}>
-                    <AccountCircle />
-                  </Avatar>
-                )}
-                <Box sx={{ ml: 1.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-                    {user.username || 'User'}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.8rem' }}>
-                    {user.role || 'Customer'}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-
-            <ListItem
-              button
-              component={RouterLink}
-              to="/"
-              sx={{
-                borderRadius: 2,
-                my: 0.5,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: alpha('#ffffff', 0.15),
-                  transform: 'translateX(4px)',
-                }
-              }}
-            >
-              <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                <HomeIcon />
+          <List component="nav" sx={{ flexGrow: 1, px: 1 }}>
+            <DrawerListItem button component={RouterLink} to="/">
+              <ListItemIcon>
+                <HomeIcon color="primary" />
               </ListItemIcon>
               <ListItemText primary="Home" />
-            </ListItem>
+            </DrawerListItem>
 
-            <ListItem
-              button
-              component={RouterLink}
-              to="/cart"
-              sx={{
-                borderRadius: 2,
-                my: 0.5,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: alpha('#ffffff', 0.15),
-                  transform: 'translateX(4px)',
-                }
-              }}
-            >
-              <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                <Badge badgeContent={items.length} color="secondary">
-                  <ShoppingCart />
-                </Badge>
+            <DrawerListItem button component={RouterLink} to="/tracks">
+              <ListItemIcon>
+                <MusicIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="Browse Tracks" />
+            </DrawerListItem>
+
+            <DrawerListItem button component={RouterLink} to="/cart">
+              <ListItemIcon>
+                <ShoppingCart color="primary" />
               </ListItemIcon>
               <ListItemText primary="Cart" />
-            </ListItem>
+            </DrawerListItem>
 
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <>
-                <ListItem
-                  button
-                  component={RouterLink}
-                  to="/profile"
-                  sx={{
-                    borderRadius: 2,
-                    my: 0.5,
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: alpha('#ffffff', 0.15),
-                      transform: 'translateX(4px)',
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                    <ProfileIcon />
+                <Divider sx={{ my: 1.5 }} />
+                <DrawerListItem button component={RouterLink} to="/profile">
+                  <ListItemIcon>
+                    <ProfileIcon color="primary" />
                   </ListItemIcon>
-                  <ListItemText primary="Profile" />
-                </ListItem>
+                  <ListItemText primary="My Profile" />
+                </DrawerListItem>
 
-                {user?.role === 'admin' && (
-                  <ListItem
-                    button
-                    component={RouterLink}
-                    to="/admin"
-                    sx={{
-                      borderRadius: 2,
-                      my: 0.5,
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        bgcolor: alpha('#ffffff', 0.15),
-                        transform: 'translateX(4px)',
-                      }
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                      <DashboardIcon />
+                <DrawerListItem button component={RouterLink} to="/my-tracks">
+                  <ListItemIcon>
+                    <MusicIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText primary="My Tracks" />
+                </DrawerListItem>
+
+                {user.role === 'admin' && (
+                  <DrawerListItem button component={RouterLink} to="/admin">
+                    <ListItemIcon>
+                      <DashboardIcon color="primary" />
                     </ListItemIcon>
                     <ListItemText primary="Admin Dashboard" />
-                  </ListItem>
+                  </DrawerListItem>
                 )}
-
-                <Divider sx={{
-                  bgcolor: alpha('#ffffff', 0.15),
-                  my: 1.5,
-                  mx: 1
-                }} />
-
-                <ListItem
-                  button
-                  onClick={handleLogout}
-                  sx={{
-                    borderRadius: 2,
-                    my: 0.5,
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: alpha('#ffffff', 0.15),
-                      transform: 'translateX(4px)',
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'white', minWidth: 40 }}></ListItemIcon>
-                  <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                    <LogoutIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Logout" />
-                </ListItem>
-              </>
-            ) : (
-              <>
-                <ListItem
-                  button
-                  component={RouterLink}
-                  to="/login"
-                  sx={{
-                    borderRadius: 2,
-                    my: 0.5,
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: alpha('#ffffff', 0.15),
-                      transform: 'translateX(4px)',
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                    <AccountCircle />
-                  </ListItemIcon>
-                  <ListItemText primary="Login" />
-                </ListItem>
-
-                <ListItem
-                  button
-                  component={RouterLink}
-                  to="/register"
-                  sx={{
-                    borderRadius: 2,
-                    my: 0.5,
-                    bgcolor: alpha('#ffffff', 0.15),
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      bgcolor: alpha('#ffffff', 0.2),
-                      transform: 'translateX(4px)',
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                  </ListItemIcon>
-                  <ListItemText primary="Register" />
-                </ListItem>
               </>
             )}
-
-            <Divider sx={{
-              bgcolor: alpha('#ffffff', 0.15),
-              my: 1.5,
-              mx: 1
-            }} />
-
-            <ListItem
-              button
-              onClick={toggleColorMode}
-              sx={{
-                borderRadius: 2,
-                my: 0.5,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: alpha('#ffffff', 0.15),
-                  transform: 'translateX(4px)',
-                }
-              }}
-            >
-              <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                {mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
-              </ListItemIcon>
-              <ListItemText primary={`${mode === 'light' ? 'Dark' : 'Light'} Mode`} />
-            </ListItem>
           </List>
 
-          <Box sx={{ position: 'absolute', bottom: 0, width: '100%', p: 2, textAlign: 'center' }}>
-            <Typography variant="caption" sx={{ opacity: 0.7 }}>
-              © {new Date().getFullYear()} AudioJunglee
-            </Typography>
+          <Divider />
+
+          <Box sx={{ p: 2 }}>
+            {isAuthenticated ? (
+              <Button
+                fullWidth
+                variant="outlined"
+                color="error"
+                startIcon={<LogoutIcon />}
+                onClick={handleLogout}
+                sx={{ borderRadius: 2, py: 1 }}
+              >
+                Logout
+              </Button>
+            ) : (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  component={RouterLink}
+                  to="/login"
+                  sx={{ flex: 1, borderRadius: 2, py: 1 }}
+                >
+                  Login
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  component={RouterLink}
+                  to="/register"
+                  sx={{ flex: 1, borderRadius: 2, py: 1 }}
+                >
+                  Sign Up
+                </Button>
+              </Box>
+            )}
           </Box>
-        </Box>
+        </DrawerWrapper>
       </Drawer>
     </Box>
   );
 };
-
 export default Header;
