@@ -8,6 +8,7 @@ const initialState = {
   refreshToken: localStorage.getItem('refreshToken') || null,
   isAuthenticated: !!localStorage.getItem('token'),
   loading: false,
+  passwordResetLoading: false,
   error: null
 };
 
@@ -55,6 +56,30 @@ export const logout = createAsyncThunk(
   }
 );
 
+export const requestPasswordReset = createAsyncThunk(
+  'auth/requestPasswordReset',
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to send reset email');
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async ({ token, newPassword }, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/reset-password', { token, newPassword });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to reset password');
+    }
+  }
+);
+
 export const fetchUserProfile = createAsyncThunk(
   'auth/fetchUserProfile',
   async (_, { rejectWithValue }) => {
@@ -93,6 +118,18 @@ export const updateUserPassword = createAsyncThunk(
       return rejectWithValue(
         error.response?.data || 'Failed to update password'
       );
+    }
+  }
+);
+
+export const updateUserRole = createAsyncThunk(
+  'auth/updateUserRole',
+  async (roleData, { rejectWithValue }) => {
+    try {
+      const response = await api.put('', roleData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to update role');
     }
   }
 );
@@ -177,6 +214,30 @@ const authSlice = createSlice({
         localStorage.removeItem('refreshToken');
       })
 
+      //Reset Password
+      .addCase(requestPasswordReset.pending, (state) => {
+        state.passwordResetLoading = true;
+        state.error = null;
+      })
+      .addCase(requestPasswordReset.fulfilled, (state) => {
+        state.passwordResetLoading = false;
+      })
+      .addCase(requestPasswordReset.rejected, (state, action) => {
+        state.passwordResetLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(resetPassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
       // Fetch User Profile
       .addCase(fetchUserProfile.pending, (state) => {
         state.loading = true;
@@ -213,6 +274,22 @@ const authSlice = createSlice({
         state.loading = false;
       })
       .addCase(updateUserPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Update User Role
+      .addCase(updateUserRole.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUserRole.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.user && action.payload) {
+          state.user = { ...state.user, role: action.payload.role };
+        }
+      })
+      .addCase(updateUserRole.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
