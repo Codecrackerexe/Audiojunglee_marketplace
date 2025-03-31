@@ -412,11 +412,11 @@ const Header = () => {
                         </ListItemIcon>
                         <ListItemText primary="My Profile" />
                       </MenuItem>
-                      <MenuItem onClick={handleMenuClose} component={RouterLink} to="/my-tracks">
+                      <MenuItem onClick={handleMenuClose} component={RouterLink} to="/products">
                         <ListItemIcon>
                           <MusicIcon fontSize="small" color="primary" />
                         </ListItemIcon>
-                        <ListItemText primary="My Tracks" />
+                        <ListItemText primary="All Tracks" />
                       </MenuItem>
                       {user.role === 'admin' && (
                         <MenuItem onClick={handleMenuClose} component={RouterLink} to="/admin">
@@ -490,15 +490,6 @@ const Header = () => {
 
               {/* Mobile view */}
               <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center' }}>
-                <Tooltip title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-                  <IconButton
-                    onClick={toggleColorMode}
-                    color="inherit"
-                    sx={{ mr: 1 }}
-                  >
-                    {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-                  </IconButton>
-                </Tooltip>
                 <Tooltip title="View Cart">
                   <IconButton
                     size="large"
