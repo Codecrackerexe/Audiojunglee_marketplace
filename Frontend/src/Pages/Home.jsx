@@ -132,8 +132,11 @@ const Home = () => {
     navigate('/');
   };
 
-  const handleAddToCart = (product) => {
-    dispatch(addToCart(product));
+  const handleAddToCart = (productData) => {
+    dispatch(addToCart({
+      product: productData,
+      quantity: 1
+    }));
   };
 
   const toggleFilters = () => {
