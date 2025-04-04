@@ -29,9 +29,29 @@ export const fetchProductDetails = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await api.get(`/products/${id}/`);
+
+      if (response.data.audio_file) {
+        const audioMetadata = await api.get(`/products/audio-metadata/${id}/`);
+        return {
+          ...response.data,
+          audioDetails: audioMetadata.data
+        };
+      }
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const fetchAudioMetadata = createAsyncThunk(
+  'products/fetchAudioMetadata',
+  async (ProductId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/products/audio-metadata/${ProductId}/`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
@@ -74,6 +94,8 @@ const initialState = {
   loading: false,
   error: null,
   audioFile: null,
+  audioDetails: null,
+  audioMetadataLoading: false,
   uploadLoading: false,
   uploadError: null,
   pagination: {
@@ -89,6 +111,7 @@ const productSlice = createSlice({
   reducers: {
     clearProductDetails: (state) => {
       state.product = null;
+      state.audioDetails = null;
     },
     clearAudioFile: (state) => {
       state.audioFile = null;
@@ -121,10 +144,26 @@ const productSlice = createSlice({
       .addCase(fetchProductDetails.fulfilled, (state, action) => {
         state.loading = false;
         state.product = action.payload;
+
+        // If audioDetails was included in the response
+        if (action.payload.audio_details) {
+          state.audioDetails = action.payload.audio_details;
+        }
       })
       .addCase(fetchProductDetails.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Failed to fetch product details';
+      })
+      .addCase(fetchAudioMetadata.pending, (state) => {
+        state.audioMetadataLoading = true;
+      })
+      .addCase(fetchAudioMetadata.fulfilled, (state, action) => {
+        state.audioMetadataLoading = false;
+        state.audioDetails = action.payload;
+      })
+      .addCase(fetchAudioMetadata.rejected, (state, action) => {
+        state.audioMetadataLoading = false;
+        state.error = action.payload || 'Failed to fetch audio metadata';
       })
       .addCase(createProduct.pending, (state) => {
         state.loading = true;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProductDetails, clearProductDetails } from '../Store/Slices/productSlice';
+import { fetchProductDetails, clearProductDetails, fetchAudioMetadata } from '../Store/Slices/productSlice';
 import { addToCart } from '../Store/Slices/cartSlice';
 import { submitReview } from '../Store/Slices/reviewsSlice';
 import {
@@ -24,7 +24,7 @@ import {
 import { ShoppingCart, PersonOutline, CalendarToday } from '@mui/icons-material';
 import AudioPlayer from '../Components/AudioPlayer';
 
-const ProductDetail = () => {
+const ProductDetail = ({ productId }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -36,17 +36,16 @@ const ProductDetail = () => {
     const [rating, setRating] = useState(5);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-    const { product, loading, error } = useSelector(state => state.products);
+    const { product, loading, audioDetails, audioMetadataLoading, error } = useSelector(state => state.products);
     const { isAuthenticated } = useSelector(state => state.auth);
     const { reviews = [], reviewLoading = false } = useSelector(state => state.reviews || {});
 
     useEffect(() => {
-        dispatch(fetchProductDetails(id));
-
+        dispatch(fetchProductDetails(productId));
         return () => {
             dispatch(clearProductDetails());
         };
-    }, [dispatch, id]);
+    }, [dispatch, productId]);
 
     const showSnackbar = useCallback((message, severity) => {
         setSnackbarMessage(message);
@@ -173,33 +172,11 @@ const ProductDetail = () => {
             </Container>
         );
     }
-
-    const getAudioProperty = (property, fallback = 'N/A') => {
-        if (!product.audio_file) return fallback;
-
-        try {
-            const props = property.split('.');
-            let value = product.audio_file;
-
-            for (const prop of props) {
-                if (value === null || value === undefined || !Object.prototype.hasOwnProperty.call(value, prop)) {
-                    return fallback;
-                }
-                value = value[prop];
-            }
-
-            return value === null || value === undefined ? fallback : value;
-        } catch (error) {
-            console.error(`Error accessing audio property ${property}:`, error);
-            return fallback;
-        }
-    };
-
     const formatDuration = (seconds) => {
         if (!seconds) return 'N/A';
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, '0');
-        return `${minutes}:${remainingSeconds}`;
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -248,7 +225,7 @@ const ProductDetail = () => {
                             {product.description || 'No description available for this product.'}
                         </Typography>
 
-                        {product.audio_file && (
+                        {product?.audio_file && (
                             <Box sx={{ mt: 3 }}>
                                 <Typography variant='h6' gutterBottom>
                                     Audio Details
@@ -256,18 +233,30 @@ const ProductDetail = () => {
                                 <Grid container spacing={2}>
                                     <Grid item xs={6} sm={3}>
                                         <Typography variant='body2' color='text.secondary'>Format</Typography>
-                                        <Typography variant='body1'>{getAudioProperty('format')}</Typography>
+                                        <Typography variant='body1'>{audioDetails?.format || 'N/A'}</Typography>
                                     </Grid>
                                     <Grid item xs={6} sm={3}>
                                         <Typography variant="body2" color="text.secondary">Duration</Typography>
                                         <Typography variant="body1">
-                                            {formatDuration(getAudioProperty('duration'))}
+                                            {audioDetails ? formatDuration(audioDetails.duration) : 'N/A'}
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={6} sm={3}>
                                         <Typography variant="body2" color="text.secondary">Quality</Typography>
                                         <Typography variant="body1">
-                                            {getAudioProperty('bitrate') ? `${getAudioProperty('bitrate')} kbps` : 'N/A'}
+                                            {audioDetails?.bitrate ? `${audioDetails.bitrate} kbps` : 'N/A'}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={6} sm={3}>
+                                        <Typography variant="body2" color="text.secondary">Sample Rate</Typography>
+                                        <Typography variant="body1">
+                                            {audioDetails?.sample_rate ? `${audioDetails.sample_rate} Hz` : 'N/A'}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={6} sm={3}>
+                                        <Typography variant="body2" color="text.secondary">Channels</Typography>
+                                        <Typography variant="body1">
+                                            {audioDetails?.channels || 'N/A'}
                                         </Typography>
                                     </Grid>
                                 </Grid>
