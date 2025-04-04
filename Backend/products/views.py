@@ -41,7 +41,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         # Set the owner to the current user
         serializer.save(owner=self.request.user)
     
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='audio-metadata')
     def audio_metadata(self, request, pk=None):
         """
         Endpoint to get audio metadata for a specific product
@@ -101,7 +101,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             metadata.save()
             return metadata
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='upload-audio')
     def upload_audio(self, request):
         """
         Endpoint to upload an audio file without creating a full product

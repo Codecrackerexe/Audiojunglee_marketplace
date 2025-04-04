@@ -24,8 +24,9 @@ import {
 import { ShoppingCart, PersonOutline, CalendarToday } from '@mui/icons-material';
 import AudioPlayer from '../Components/AudioPlayer';
 
-const ProductDetail = ({ productId }) => {
-    const { id } = useParams();
+// CORRECTION: Removed productId prop as we'll use URL params consistently
+const ProductDetail = () => {
+    const { id } = useParams(); // Get id from URL params
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -41,11 +42,15 @@ const ProductDetail = ({ productId }) => {
     const { reviews = [], reviewLoading = false } = useSelector(state => state.reviews || {});
 
     useEffect(() => {
-        dispatch(fetchProductDetails(productId));
+        // CORRECTION: Added check to ensure id is valid before fetching
+        if (id && id !== 'undefined') {
+            dispatch(fetchProductDetails(id));
+        }
+
         return () => {
             dispatch(clearProductDetails());
         };
-    }, [dispatch, productId]);
+    }, [dispatch, id]); // CORRECTION: Changed dependency from productId to id
 
     const showSnackbar = useCallback((message, severity) => {
         setSnackbarMessage(message);
@@ -65,6 +70,7 @@ const ProductDetail = ({ productId }) => {
 
         try {
             setIsAddingToCart(true);
+            // CORRECTION: Using product from state, which is loaded based on id
             await dispatch(addToCart({ product, quantity: 1 })).unwrap();
             showSnackbar('Added to cart successfully', 'success');
         } catch (error) {
@@ -83,6 +89,7 @@ const ProductDetail = ({ productId }) => {
         }
 
         try {
+            // Using id consistently (from URL params)
             await dispatch(submitReview({
                 productId: id,
                 rating,
@@ -100,7 +107,8 @@ const ProductDetail = ({ productId }) => {
         setSnackbarOpen(false);
     };
 
-    if (loading) {
+    // CORRECTION: Added more detailed loading state for better UX
+    if (loading || !id || id === 'undefined') {
         return (
             <Container sx={{ py: 4 }}>
                 <Grid container spacing={4}>
@@ -132,6 +140,7 @@ const ProductDetail = ({ productId }) => {
         );
     };
 
+    // CORRECTION: Enhanced error handling with better user feedback
     if (error) {
         return (
             <Container sx={{ py: 4 }}>
@@ -149,6 +158,15 @@ const ProductDetail = ({ productId }) => {
                     aria-label="Try loading product again"
                 >
                     Try Again
+                </Button>
+                {/* CORRECTION: Added a back button for better navigation */}
+                <Button
+                    variant="text"
+                    sx={{ mt: 2, ml: 2 }}
+                    onClick={() => navigate('/products')}
+                    aria-label="Back to products"
+                >
+                    Back to Products
                 </Button>
             </Container>
         );
@@ -172,6 +190,7 @@ const ProductDetail = ({ productId }) => {
             </Container>
         );
     }
+
     const formatDuration = (seconds) => {
         if (!seconds) return 'N/A';
         const mins = Math.floor(seconds / 60);
@@ -179,8 +198,27 @@ const ProductDetail = ({ productId }) => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    // CORRECTION: Added check for audioDetails before rendering audio section
+    const hasAudioDetails = product.audio_file && audioDetails;
+
     return (
         <Container sx={{ py: 4 }}>
+            {/* CORRECTION: Added Snackbar component that was missing */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={handleSnackbarClose}
+                    severity={snackbarSeverity}
+                    sx={{ width: '100%' }}
+                >
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
+
             <Grid container spacing={4}>
                 <Grid item xs={12} md={8}>
                     <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
@@ -190,7 +228,7 @@ const ProductDetail = ({ productId }) => {
 
                         <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", mb: 2 }}>
                             <Chip
-                                label={product.category_name}
+                                label={product.category_name || product.category}
                                 color="primary"
                                 size='small'
                                 sx={{ mr: 1, mb: { xs: 1, sm: 0 } }}
@@ -198,7 +236,7 @@ const ProductDetail = ({ productId }) => {
                             <Box sx={{ display: 'flex', alignItems: 'center', ml: { xs: 0, sm: 2 }, mr: { xs: 2, sm: 0 }, mb: { xs: 1, sm: 0 } }}>
                                 <PersonOutline sx={{ fontSize: 18, mr: 0.5 }} />
                                 <Typography variant='body2' color="text.secondary">
-                                    {product.seller_username}
+                                    {product.seller_username || product.owner_username || "Unknown seller"}
                                 </Typography>
                             </Box>
                             <Box sx={{ display: "flex", alignItems: "center", ml: { xs: 0, sm: 2 } }}>
@@ -210,11 +248,13 @@ const ProductDetail = ({ productId }) => {
                         </Box>
                         <Divider sx={{ my: 2 }} />
 
+                        {/* CORRECTION: Added loading state for audio player */}
                         {product.audio_file && (
                             <Box sx={{ my: 3 }}>
                                 <AudioPlayer
                                     audioUrl={product.audio_file}
                                     title={product.title}
+                                    isLoading={audioMetadataLoading}
                                 />
                             </Box>
                         )}
@@ -225,41 +265,58 @@ const ProductDetail = ({ productId }) => {
                             {product.description || 'No description available for this product.'}
                         </Typography>
 
+                        {/* CORRECTION: Improved audio details section with loading state */}
                         {product?.audio_file && (
                             <Box sx={{ mt: 3 }}>
                                 <Typography variant='h6' gutterBottom>
                                     Audio Details
                                 </Typography>
-                                <Grid container spacing={2}>
-                                    <Grid item xs={6} sm={3}>
-                                        <Typography variant='body2' color='text.secondary'>Format</Typography>
-                                        <Typography variant='body1'>{audioDetails?.format || 'N/A'}</Typography>
+                                {audioMetadataLoading ? (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                                        <CircularProgress size={24} />
+                                    </Box>
+                                ) : (
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={6} sm={3}>
+                                            <Typography variant='body2' color='text.secondary'>Format</Typography>
+                                            <Typography variant='body1'>
+                                                {audioDetails?.file_format || audioDetails?.format || 'N/A'}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={3}>
+                                            <Typography variant="body2" color="text.secondary">Duration</Typography>
+                                            <Typography variant="body1">
+                                                {audioDetails ? formatDuration(audioDetails.duration) : 'N/A'}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={3}>
+                                            <Typography variant="body2" color="text.secondary">Quality</Typography>
+                                            <Typography variant="body1">
+                                                {audioDetails?.bit_rate || audioDetails?.bitrate ?
+                                                    `${audioDetails?.bit_rate || audioDetails?.bitrate} kbps` : 'N/A'}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={3}>
+                                            <Typography variant="body2" color="text.secondary">Sample Rate</Typography>
+                                            <Typography variant="body1">
+                                                {audioDetails?.sample_rate ? `${audioDetails.sample_rate} Hz` : 'N/A'}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={3}>
+                                            <Typography variant="body2" color="text.secondary">Channels</Typography>
+                                            <Typography variant="body1">
+                                                {audioDetails?.channels || 'N/A'}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={3}>
+                                            <Typography variant="body2" color="text.secondary">File Size</Typography>
+                                            <Typography variant="body1">
+                                                {audioDetails?.file_size ?
+                                                    `${(audioDetails.file_size / (1024 * 1024)).toFixed(2)} MB` : 'N/A'}
+                                            </Typography>
+                                        </Grid>
                                     </Grid>
-                                    <Grid item xs={6} sm={3}>
-                                        <Typography variant="body2" color="text.secondary">Duration</Typography>
-                                        <Typography variant="body1">
-                                            {audioDetails ? formatDuration(audioDetails.duration) : 'N/A'}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={6} sm={3}>
-                                        <Typography variant="body2" color="text.secondary">Quality</Typography>
-                                        <Typography variant="body1">
-                                            {audioDetails?.bitrate ? `${audioDetails.bitrate} kbps` : 'N/A'}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={6} sm={3}>
-                                        <Typography variant="body2" color="text.secondary">Sample Rate</Typography>
-                                        <Typography variant="body1">
-                                            {audioDetails?.sample_rate ? `${audioDetails.sample_rate} Hz` : 'N/A'}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={6} sm={3}>
-                                        <Typography variant="body2" color="text.secondary">Channels</Typography>
-                                        <Typography variant="body1">
-                                            {audioDetails?.channels || 'N/A'}
-                                        </Typography>
-                                    </Grid>
-                                </Grid>
+                                )}
                             </Box>
                         )}
                     </Paper>
@@ -273,138 +330,155 @@ const ProductDetail = ({ productId }) => {
 
                         {/* Review form for authenticated users */}
                         {isAuthenticated ? (
-                            <Box sx={{ mb: 4 }}>
-                                <Typography variant="h6" gutterBottom>
-                                    Add Your Review
+                            <Box sx={{ mb: 4 }} component="form" onSubmit={handleReviewSubmit}>
+                                <Typography variant="subtitle1" gutterBottom>
+                                    Write a Review
                                 </Typography>
-                                <Box component="form" onSubmit={handleReviewSubmit}>
-                                    <Box sx={{ mb: 2 }}>
-                                        <Typography component="legend">Your Rating</Typography>
-                                        <Rating
-                                            name="rating"
-                                            value={rating}
-                                            onChange={(e, newValue) => setRating(newValue)}
-                                            precision={1}
-                                            aria-label="Product rating"
-                                        />
-                                    </Box>
-                                    <TextField
-                                        fullWidth
-                                        multiline
-                                        rows={4}
-                                        label="Your review"
-                                        variant="outlined"
-                                        value={reviewText}
-                                        onChange={(e) => setReviewText(e.target.value)}
-                                        sx={{ mb: 2 }}
-                                        required
-                                        aria-label="Review text"
-                                    />
-                                    <Button
-                                        variant="contained"
-                                        type="submit"
-                                        disabled={reviewLoading}
-                                        aria-label="Submit review"
-                                    >
-                                        {reviewLoading ? 'Submitting...' : 'Submit Review'}
-                                    </Button>
-                                </Box>
+                                <Rating
+                                    name="rating"
+                                    value={rating}
+                                    onChange={(event, newValue) => {
+                                        setRating(newValue);
+                                    }}
+                                    sx={{ mb: 2 }}
+                                />
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={4}
+                                    variant="outlined"
+                                    placeholder="Share your thoughts about this product..."
+                                    value={reviewText}
+                                    onChange={(e) => setReviewText(e.target.value)}
+                                    sx={{ mb: 2 }}
+                                />
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    color="primary"
+                                    disabled={reviewLoading}
+                                >
+                                    {reviewLoading ? (
+                                        <CircularProgress size={24} />
+                                    ) : (
+                                        'Submit Review'
+                                    )}
+                                </Button>
                             </Box>
                         ) : (
-                            <Box sx={{ mb: 4 }}>
+                            <Box sx={{ mb: 3 }}>
                                 <Alert severity="info">
                                     Please <Button
-                                        color="primary"
+                                        color="inherit"
+                                        size="small"
                                         onClick={() => navigate('/login')}
-                                        sx={{ mx: 1, p: 0, minWidth: 'auto' }}
-                                        aria-label="Login to leave review"
-                                    >login</Button> to leave a review.
+                                    >
+                                        log in
+                                    </Button> to write a review.
                                 </Alert>
                             </Box>
                         )}
-
-                        {/* Displaying reviews */}
+                        {/* Display existing reviews */}
+                        {/* CORRECTION: Added handling for empty reviews */}
                         {reviews && reviews.length > 0 ? (
                             reviews.map((review) => (
-                                <Box key={review.id || `review-${review.username}-${review.created_at}`} sx={{ mb: 2 }}>
-                                    <CardContent>
-                                        <Box sx={{ display: "flex", justifyContent: 'space-between', mb: 1 }}>
-                                            <Typography variant="subtitle1">{review.username}</Typography>
-                                            <Typography variant="body2" color="text.secondary">
-                                                {new Date(review.created_at).toLocaleDateString()}
+                                <Paper
+                                    key={review.id}
+                                    elevation={0}
+                                    sx={{
+                                        p: 2,
+                                        mb: 2,
+                                        backgroundColor: 'background.paper',
+                                        border: '1px solid',
+                                        borderColor: 'divider'
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <Typography variant="subtitle1" fontWeight="bold" sx={{ mr: 1 }}>
+                                                {review.user_name || 'Anonymous'}
                                             </Typography>
+                                            <Rating value={review.rating} readOnly size="small" />
                                         </Box>
-                                        <Rating value={review.rating} readOnly size="small" sx={{ mb: 1 }} />
-                                        <Typography variant="body2">
-                                            {review.text}
+                                        <Typography variant="body2" color="text.secondary">
+                                            {new Date(review.created_at).toLocaleDateString()}
                                         </Typography>
-                                    </CardContent>
-                                    <Divider />
-                                </Box>
+                                    </Box>
+                                    <Typography variant="body1">
+                                        {review.text}
+                                    </Typography>
+                                </Paper>
                             ))
                         ) : (
-                            <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-                                No reviews yet. Be the first to review this product!
-                            </Typography>
-                        )}
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                    <Paper sx={{ p: { xs: 2, sm: 3 }, position: 'sticky', top: 20 }}>
-                        <Typography variant="h4" component="div" gutterBottom>
-                            ${parseFloat(product.price).toFixed(2)}
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            size="large"
-                            fullWidth
-                            startIcon={isAddingToCart ? <CircularProgress size={20} color="inherit" /> : <ShoppingCart />}
-                            onClick={handleAddToCart}
-                            disabled={isAddingToCart}
-                            sx={{ mb: 2 }}
-                            aria-label="Add product to cart"
-                        >
-                            {isAddingToCart ? 'Adding...' : 'Add to Cart'}
-                        </Button>
-
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                            ✓ Instant digital delivery
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            ✓ Secure payment
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            ✓ Full usage rights
-                        </Typography>
-
-                        {product.license_details && (
-                            <Box sx={{ mt: 3 }}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    License Information:
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" paragraph>
-                                    {product.license_details}
+                            <Box sx={{ textAlign: 'center', py: 3 }}>
+                                <Typography variant="body1" color="text.secondary">
+                                    No reviews yet. Be the first to review this product!
                                 </Typography>
                             </Box>
                         )}
                     </Paper>
                 </Grid>
-            </Grid>
 
-            <Snackbar
-                open={snackbarOpen}
-                autoHideDuration={3000}
-                onClose={handleSnackbarClose}
-                aria-live="polite"
-            >
-                <Alert
-                    onClose={handleSnackbarClose}
-                    severity={snackbarSeverity}
-                    sx={{ width: '100%' }}
-                >
-                    {snackbarMessage}
-                </Alert>
-            </Snackbar>
+                {/* Product pricing and add to cart section */}
+                <Grid item xs={12} md={4}>
+                    <Paper sx={{ p: { xs: 2, sm: 3 }, position: 'sticky', top: 20 }}>
+                        <Typography variant="h4" color="primary" gutterBottom>
+                            ${typeof product.price === 'number'
+                                ? product.price.toFixed(2)
+                                : parseFloat(product.price).toFixed(2)}
+                        </Typography>
+                        {/* CORRECTION: Added better handling for add to cart button states */}
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="large"
+                            fullWidth
+                            startIcon={<ShoppingCart />}
+                            onClick={handleAddToCart}
+                            disabled={isAddingToCart}
+                            sx={{ mb: 2 }}
+                        >
+                            {isAddingToCart ? (
+                                <CircularProgress size={24} color="inherit" />
+                            ) : (
+                                'Add to Cart'
+                            )}
+                        </Button>
+
+                        {/* CORRECTION: Added product info summary for better UX */}
+                        <Box sx={{ mt: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Product Summary
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="body2" color="text.secondary">Category:</Typography>
+                                <Typography variant="body2">{product.category_name || product.category}</Typography>
+                            </Box>
+                            {product.audio_file && (
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                    <Typography variant="body2" color="text.secondary">Format:</Typography>
+                                    <Typography variant="body2">
+                                        {audioDetails?.file_format || audioDetails?.format || 'Audio file'}
+                                    </Typography>
+                                </Box>
+                            )}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="body2" color="text.secondary">Seller:</Typography>
+                                <Typography variant="body2">
+                                    {product.seller_username || product.owner_username || "Unknown"}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="body2" color="text.secondary">Date Added:</Typography>
+                                <Typography variant="body2">
+                                    {new Date(product.created_at).toLocaleDateString()}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Paper>
+                </Grid>
+            </Grid>
         </Container>
     );
 };

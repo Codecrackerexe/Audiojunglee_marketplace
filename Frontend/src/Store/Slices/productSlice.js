@@ -27,35 +27,43 @@ export const fetchProducts = createAsyncThunk(
 export const fetchProductDetails = createAsyncThunk(
   'products/fetchProductDetails',
   async (id, { rejectWithValue }) => {
+    if (!id || id === 'undefined') {
+      return rejectWithValue('Invalid product ID');
+    }
+
     try {
       const response = await api.get(`/products/${id}/`);
 
       if (response.data.audio_file) {
-        const audioMetadata = await api.get(`/products/audio-metadata/${id}/`);
-        return {
-          ...response.data,
-          audioDetails: audioMetadata.data
-        };
+        try {
+          const audioMetadata = await api.get(`/products/${id}/audio-metadata/`);
+          return {
+            ...response.data,
+            audioDetails: audioMetadata.data
+          };
+        } catch (audioError) {
+          console.warn('Failed to fetch audio metadata:', audioError);
+          return response.data;
+        }
       }
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || 'Failed to fetch product details');
     }
   }
 );
 
 export const fetchAudioMetadata = createAsyncThunk(
   'products/fetchAudioMetadata',
-  async (ProductId, { rejectWithValue }) => {
+  async (productId, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/products/audio-metadata/${ProductId}/`);
+      const response = await api.get(`/products/${productId}/audio-metadata/`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
-
 export const createProduct = createAsyncThunk(
   'products/createProduct',
   async (productData, { rejectWithValue }) => {
