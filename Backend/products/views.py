@@ -1,75 +1,129 @@
-from rest_framework import viewsets, permissions, status, filters
-from rest_framework.response import Response
+import os
+from django.conf import settings
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
-from django.db.models import Q
-from .models import Product, AudioFile, Category
-from .serializers import ProductSerializer, AudioFileSerializer
-from .permissions import IsSellerOrReadOnly
-from rest_framework.parsers import MultiPartParser, FormParser
-from .utils import validate_audio_file, get_audio_metadata
+from rest_framework.response import Response
+from .models import Product, AudioMetadata
+from .serializers import ProductSerializer, AudioMetadataSerializer, ProductCreateSerializer
+import mutagen
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.filter(is_active=True)
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsSellerOrReadOnly]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'description', 'categories__name']
-    ordering_fields = ['created_at', 'price', 'title']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ProductCreateSerializer
+        return ProductSerializer
     
     def get_queryset(self):
-        queryset = super().get_queryset()
-        category = self.request.query_params.get('category', None)
-        min_price = self.request.query_params.get('min_price', None)
-        max_price = self.request.query_params.get('max_price', None)
+        queryset = Product.objects.all()
+        
+        # Apply filters based on query parameters
+        category = self.request.query_params.get('category')
+        search = self.request.query_params.get('search')
+        min_price = self.request.query_params.get('minPrice')
+        max_price = self.request.query_params.get('maxPrice')
         
         if category:
-            # Filter by category name instead of ID
-            queryset = queryset.filter(categories__name=category)
-        
+            queryset = queryset.filter(category=category)
+        if search:
+            queryset = queryset.filter(title__icontains=search)
         if min_price:
             queryset = queryset.filter(price__gte=min_price)
-        
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
             
-        return queryset.distinct()  # Use distinct to avoid duplicates
+        return queryset
     
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def my_products(self, request):
-        products = Product.objects.filter(seller=request.user)
-        serializer = self.get_serializer(products, many=True)
+    def perform_create(self, serializer):
+        # Set the owner to the current user
+        serializer.save(owner=self.request.user)
+    
+    @action(detail=True, methods=['get'])
+    def audio_metadata(self, request, pk=None):
+        """
+        Endpoint to get audio metadata for a specific product
+        """
+        product = self.get_object()
+        
+        # Check if the product has an audio file
+        if not product.audio_file:
+            return Response({"error": "This product doesn't have an audio file"}, 
+                            status=status.HTTP_404_NOT_FOUND)
+        
+        # Try to get existing metadata or create new
+        try:
+            metadata = AudioMetadata.objects.get(product=product)
+        except AudioMetadata.DoesNotExist:
+            # Extract metadata from the audio file
+            metadata = self._extract_audio_metadata(product)
+            
+        serializer = AudioMetadataSerializer(metadata)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['post'], url_path='upload-audio', 
-            permission_classes=[permissions.AllowAny],
-            parser_classes=[MultiPartParser, FormParser])
+    def _extract_audio_metadata(self, product):
+        """
+        Extract metadata from the audio file and save it to the database
+        """
+        audio_file_path = os.path.join(settings.MEDIA_ROOT, product.audio_file.name)
+        
+        try:
+            # Use mutagen to extract audio metadata
+            audio = mutagen.File(audio_file_path)
+            
+            # Create or update metadata object
+            metadata, created = AudioMetadata.objects.get_or_create(product=product)
+            
+            # Extract common metadata (implementation depends on file format)
+            if hasattr(audio, 'info'):
+                metadata.duration = getattr(audio.info, 'length', None)
+                metadata.sample_rate = getattr(audio.info, 'sample_rate', None)
+                metadata.bit_rate = getattr(audio.info, 'bitrate', None)
+                metadata.channels = getattr(audio.info, 'channels', None)
+            
+            # Get file format from extension
+            if product.audio_file.name:
+                metadata.file_format = os.path.splitext(product.audio_file.name)[1][1:].lower()
+            
+            # Get file size
+            metadata.file_size = product.audio_file.size
+            
+            metadata.save()
+            return metadata
+            
+        except Exception as e:
+            # In case of error, create minimal metadata
+            metadata, created = AudioMetadata.objects.get_or_create(product=product)
+            metadata.file_format = os.path.splitext(product.audio_file.name)[1][1:].lower()
+            metadata.file_size = product.audio_file.size
+            metadata.save()
+            return metadata
+    
+    @action(detail=False, methods=['post'])
     def upload_audio(self, request):
-        audio_file = request.FILES.get('audio_file')
-
-        if not audio_file:
-            return Response({'error': 'No audio file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        """
+        Endpoint to upload an audio file without creating a full product
+        """
+        if 'audio_file' not in request.FILES:
+            return Response({"error": "No audio file provided"}, 
+                           status=status.HTTP_400_BAD_REQUEST)
+            
+        audio_file = request.FILES['audio_file']
         
-        is_valid, msg = validate_audio_file(audio_file)
+        # Save the file temporarily
+        file_path = os.path.join(settings.MEDIA_ROOT, 'temp', audio_file.name)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         
-        if not is_valid:
-            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
-
-        metadata = get_audio_metadata(audio_file)
+        with open(file_path, 'wb+') as destination:
+            for chunk in audio_file.chunks():
+                destination.write(chunk)
         
-        if not metadata:
-            return Response({'error': 'Failed to extract audio metadata'}, status=status.HTTP_400_BAD_REQUEST)
-
-        required_keys = ['duration', 'file_size', 'sample_rate']
-        for key in required_keys:
-            if key not in metadata:
-                return Response({'error': f'Missing metadata: {key}'}, status=status.HTTP_400_BAD_REQUEST)
-
-        audio_file_obj = AudioFile.objects.create(
-            file=audio_file,
-            duration=metadata['duration'],
-            file_size=metadata['file_size'],
-            format=metadata['sample_rate']
-        )
-
-        serializer = AudioFileSerializer(audio_file_obj)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # Return the file path to be used later when creating the product
+        return Response({
+            "file_name": audio_file.name,
+            "file_path": file_path,
+            "file_size": audio_file.size,
+            "file_type": audio_file.content_type
+        })
