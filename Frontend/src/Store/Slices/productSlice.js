@@ -5,7 +5,7 @@ const token = localStorage.getItem('token');
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async ({ category, search, minPrice, maxPrice }, { rejectwithValue }) => {
+  async ({ category, search, minPrice, maxPrice }, { rejectWithValue }) => {
     try {
       let url = '/products/';
       const params = {};
@@ -19,7 +19,7 @@ export const fetchProducts = createAsyncThunk(
       return response.data;
     }
     catch (error) {
-      return rejectwithValue(error.response.data);
+      return rejectWithValue(error.response.data);
     }
   }
 );
@@ -55,15 +55,16 @@ export const fetchProductDetails = createAsyncThunk(
 
 export const fetchAudioMetadata = createAsyncThunk(
   'products/fetchAudioMetadata',
-  async (productId, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/products/${productId}/audio-metadata/`);
+      const response = await api.get(`/products/${id}/audio-metadata/`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
+
 export const createProduct = createAsyncThunk(
   'products/createProduct',
   async (productData, { rejectWithValue }) => {
@@ -79,6 +80,7 @@ export const createProduct = createAsyncThunk(
     }
   }
 );
+
 export const uploadAudioFile = createAsyncThunk(
   'products/uploadAudioFile',
   async (fileData, { rejectWithValue }) => {
@@ -96,6 +98,7 @@ export const uploadAudioFile = createAsyncThunk(
     }
   }
 );
+
 const initialState = {
   products: [],
   product: null,
