@@ -24,9 +24,8 @@ import {
 import { ShoppingCart, PersonOutline, CalendarToday } from '@mui/icons-material';
 import AudioPlayer from '../Components/AudioPlayer';
 
-// CORRECTION: Removed productId prop as we'll use URL params consistently
 const ProductDetail = () => {
-    const { id } = useParams(); // Get id from URL params
+    const { id } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -42,7 +41,6 @@ const ProductDetail = () => {
     const { reviews = [], reviewLoading = false } = useSelector(state => state.reviews || {});
 
     useEffect(() => {
-        // CORRECTION: Added check to ensure id is valid before fetching
         if (id && id !== 'undefined') {
             dispatch(fetchProductDetails(id));
         }
@@ -50,8 +48,7 @@ const ProductDetail = () => {
         return () => {
             dispatch(clearProductDetails());
         };
-    }, [dispatch, id]); // CORRECTION: Changed dependency from productId to id
-
+    }, [dispatch, id]);
     const showSnackbar = useCallback((message, severity) => {
         setSnackbarMessage(message);
         setSnackbarSeverity(severity);
@@ -70,7 +67,6 @@ const ProductDetail = () => {
 
         try {
             setIsAddingToCart(true);
-            // CORRECTION: Using product from state, which is loaded based on id
             await dispatch(addToCart({ product, quantity: 1 })).unwrap();
             showSnackbar('Added to cart successfully', 'success');
         } catch (error) {
@@ -106,8 +102,6 @@ const ProductDetail = () => {
     const handleSnackbarClose = () => {
         setSnackbarOpen(false);
     };
-
-    // CORRECTION: Added more detailed loading state for better UX
     if (loading || !id || id === 'undefined') {
         return (
             <Container sx={{ py: 4 }}>
@@ -140,7 +134,6 @@ const ProductDetail = () => {
         );
     };
 
-    // CORRECTION: Enhanced error handling with better user feedback
     if (error) {
         return (
             <Container sx={{ py: 4 }}>
@@ -159,7 +152,7 @@ const ProductDetail = () => {
                 >
                     Try Again
                 </Button>
-                {/* CORRECTION: Added a back button for better navigation */}
+                {/* Added a back button for better navigation */}
                 <Button
                     variant="text"
                     sx={{ mt: 2, ml: 2 }}
@@ -198,12 +191,11 @@ const ProductDetail = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // CORRECTION: Added check for audioDetails before rendering audio section
     const hasAudioDetails = product.audio_file && audioDetails;
 
     return (
         <Container sx={{ py: 4 }}>
-            {/* CORRECTION: Added Snackbar component that was missing */}
+            {/* Added Snackbar component that was missing */}
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={6000}
@@ -248,7 +240,7 @@ const ProductDetail = () => {
                         </Box>
                         <Divider sx={{ my: 2 }} />
 
-                        {/* CORRECTION: Added loading state for audio player */}
+                        {/* Added loading state for audio player */}
                         {product.audio_file && (
                             <Box sx={{ my: 3 }}>
                                 <AudioPlayer
@@ -265,7 +257,7 @@ const ProductDetail = () => {
                             {product.description || 'No description available for this product.'}
                         </Typography>
 
-                        {/* CORRECTION: Improved audio details section with loading state */}
+                        {/* Improved audio details section with loading state */}
                         {product?.audio_file && (
                             <Box sx={{ mt: 3 }}>
                                 <Typography variant='h6' gutterBottom>
@@ -379,7 +371,7 @@ const ProductDetail = () => {
                             </Box>
                         )}
                         {/* Display existing reviews */}
-                        {/* CORRECTION: Added handling for empty reviews */}
+                        {/* Added handling for empty reviews */}
                         {reviews && reviews.length > 0 ? (
                             reviews.map((review) => (
                                 <Paper
@@ -427,7 +419,7 @@ const ProductDetail = () => {
                                 ? product.price.toFixed(2)
                                 : parseFloat(product.price).toFixed(2)}
                         </Typography>
-                        {/* CORRECTION: Added better handling for add to cart button states */}
+                        {/*Added better handling for add to cart button states */}
                         <Button
                             variant="contained"
                             color="primary"
@@ -445,7 +437,7 @@ const ProductDetail = () => {
                             )}
                         </Button>
 
-                        {/* CORRECTION: Added product info summary for better UX */}
+                        {/*Added product info summary for better UX */}
                         <Box sx={{ mt: 3 }}>
                             <Typography variant="subtitle2" gutterBottom>
                                 Product Summary
