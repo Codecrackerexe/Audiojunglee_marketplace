@@ -213,7 +213,7 @@ const Header = () => {
     <Box sx={{ flexGrow: 1 }}>
       <HideOnScroll>
         <AppBar
-          position='relative'
+          position='fixed'
           elevation={0}
           sx={{
             background: mode === 'light'
